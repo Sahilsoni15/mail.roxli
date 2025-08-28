@@ -1223,14 +1223,18 @@ function sendWelcomeEmail() {
     .then(data => {
         console.log('Welcome email response:', data);
         if (data.success) {
-            showNotification('Welcome email sent! Check your inbox.');
-            setTimeout(loadEmails, 3000);
+            showNotification('Welcome to Roxli Mail! Check your inbox.');
+            setTimeout(loadEmails, 2000);
         } else {
             console.error('Failed to send welcome email:', data.error);
+            // Try again after delay
+            setTimeout(sendWelcomeEmail, 5000);
         }
     })
     .catch(error => {
         console.error('Error sending welcome email:', error);
+        // Try again after delay
+        setTimeout(sendWelcomeEmail, 5000);
     });
 }
 

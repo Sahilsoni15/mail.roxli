@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#2196F3">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Roxli Mail">
+<meta name="msapplication-TileColor" content="#2196F3">
+<meta name="msapplication-tap-highlight" content="no">
+<title>Roxli Mail - Inbox</title>
+<link rel="icon" type="image/png" sizes="192x192" href="/static/images/logo.png">
+<link rel="apple-touch-icon" href="/static/images/logo.png">
+<link rel="shortcut icon" href="/static/images/logo.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    :root { --accent: #1a73e8; }
+
+@media (prefers-color-scheme: dark) {
+        body { background-color: #202124 !important; color: #e8eaed !important; }
+        .sidebar { background-color: #2d2e30 !important; border-right: 1px solid #3c4043 !important; }
+        .email-item:hover { background-color: #3c4043 !important; }
+        .dropdown { background-color: #2d2e30 !important; color: #e8eaed !important; border: 1px solid #3c4043 !important; }
+        .dropdown-header { background-color: #2d2e30 !important; color: #e8eaed !important; border-bottom: 1px solid #3c4043 !important; }
+        .dropdown-item { color: #e8eaed !important; }
+        .dropdown-item:hover { background-color: #3c4043 !important; }
+        .dropdown-divider { background: #3c4043 !important; }
+        .dropdown-name { color: #e8eaed !important; }
+        .dropdown-email, .dropdown-section-title { color: #9aa0a6 !important; }
+        .account-name { color: #e8eaed !important; }
+        .account-email { color: #9aa0a6 !important; }
+        #mailSearch, #mobileMailSearch { background-color: #3c4043 !important; color: #e8eaed !important; border: 1px solid #5f6368 !important; }
+        .top-bar { background-color: #2d2e30 !important; border-bottom: 1px solid #3c4043 !important; }
+        .action-btn:hover { background-color: #3c4043 !important; }
+    }
+    
+    .action-btn:hover {
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+    
+    .mail-actions {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+
+@media (prefers-color-scheme: light) {
+        body { background-color: #ffffff; color: #000000; }
+        .sidebar { background-color: #f1f3f4; border-right: 1px solid #dadce0; }
+        .email-item:hover { background-color: #f1f3f4; }
+        .dropdown { background-color: white; color: black; border: 1px solid #dadce0; }
+        .dropdown-item:hover { background-color: #f1f3f4; }
+        #mailSearch, #mobileMailSearch { background-color: white; color: black; border: 1px solid #ccc; }
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+        height: 100vh;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+
+    .sidebar {
+        width: 280px;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        transition: transform 0.3s ease;
+        background-color: inherit;
+        z-index: 300;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        overflow-y: auto;
+        transform: translateX(-100%);
+    }
+
+    .sidebar.hidden {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .logo img {
+        height: 40px;
+        width: 40px;
+        border-radius: 50%;
+        margin-right: 8px;
+        object-fit: cover;
+    }
+
+    .compose-btn {
+        background-color: var(--accent);
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 20px;
+        margin-bottom: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .menu-item {
+        padding: 10px;
+        cursor: pointer;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .menu-item:hover {
+        background-color: rgba(26, 115, 232, 0.1);
+    }
+
+    .top-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0 20px;
+        border-bottom: 1px solid rgba(128,128,128,0.2);
+        z-index: 100;
+        background: inherit;
+        transition: left 0.3s ease;
+    }
+
+    .profile-pic, .profile-initials {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        object-fit: cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 700;
+        color: white;
+        text-transform: uppercase;
+        border: 2px solid rgba(255,255,255,0.15);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        letter-spacing: 0px;
+        line-height: 1;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+    
+    .profile-pic:hover, .profile-initials:hover {
+        transform: scale(1.05);
+        border-color: rgba(255,255,255,0.2);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .dropdown {
+        position: absolute;
+        top: 60px;
+        right: 20px;
+        background: #fff;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        min-width: 320px;
+        max-height: 500px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1001;
+    }
+
+    .dropdown-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .dropdown-name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    .dropdown-email {
+        font-size: 12px;
+        color: #5f6368;
+    }
+    
+    .dropdown-divider {
+        height: 1px;
+        background: #e0e0e0;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        text-decoration: none;
+        color: #202124;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    
+    .dropdown-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .dropdown-section-title {
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #5f6368;
+        text-transform: uppercase;
+    }
+
+    .email-section {
+        margin-top: 50px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        margin-left: 0;
+        transition: margin-left 0.3s ease;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .compose-float-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 12px 20px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .top-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        color: var(--accent);
+        margin-left: 10px;
+    }
+    
+    .mobile-search-container {
+        display: none;
+    }
+
+@media (max-width: 768px) {
+        .top-btn { 
+            display: none; 
+        }
+        
+        .mobile-search-container {
+            display: flex;
+            flex: 1;
+            max-width: 60%;
+            position: relative;
+            margin: 0 10px;
+        }
+        
+        #mobileMailSearch {
+            width: 100%;
+            padding: 6px 10px 6px 30px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid rgba(128,128,128,0.3);
+            background-color: rgba(255,255,255,0.1);
+            color: inherit;
+        }
+        
+        .mobile-search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent);
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        .desktop-only {
+            display: none;
+        }
+    }
+
+    .email-search {
+        padding: 10px;
+        border-bottom: 1px solid rgba(128,128,128,0.2);
+    }
+
+    #mailSearch {
+        width: 100%;
+        padding: 8px;
+        border-radius: 6px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .email-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .email-item {
+        padding: 12px;
+        border-bottom: 1px solid rgba(128,128,128,0.2);
+        cursor: pointer;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        transition: background-color 0.2s ease;
+    }
+    
+    .email-item.unread {
+        background: rgba(26, 115, 232, 0.05);
+        font-weight: 600;
+    }
+    
+    .email-checkbox {
+        margin-right: 8px;
+        cursor: pointer;
+    }
+    
+    .email-star {
+        margin-right: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        color: #fdd835;
+    }
+    
+    .email-star:hover {
+        transform: scale(1.2);
+    }
+    
+    .account-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .account-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .account-item:last-child {
+        border-bottom: none;
+    }
+    
+    .account-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+    
+    .account-info {
+        flex: 1;
+    }
+    
+    .account-name {
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .account-email {
+        font-size: 12px;
+        color: #5f6368;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+        .active-account {
+            background: linear-gradient(135deg, rgba(26,115,232,0.2), rgba(26,115,232,0.1));
+            border-color: rgba(26,115,232,0.4);
+        }
+        
+        .account-item:hover {
+            background-color: rgba(26,115,232,0.15) !important;
+        }
+    }
+
+    .email-avatar {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-initials {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 16px;
+        text-transform: uppercase;
+    }
+
+    .email-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .email-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .email-sender {
+        font-weight: 600;
+        font-size: 14px;
+        color: #202124;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .email-time {
+        font-size: 12px;
+        color: #5f6368;
+        flex-shrink: 0;
+    }
+
+    .email-subject {
+        font-weight: 500;
+        font-size: 14px;
+        color: #202124;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .email-preview {
+        font-size: 13px;
+        color: #5f6368;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        line-height: 1.4;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .email-sender {
+            color: #e8eaed;
+        }
+        
+        .email-subject {
+            color: #e8eaed;
+        }
+        
+        .email-time,
+        .email-preview {
+            color: #9aa0a6;
+        }
+    }
+
+    .menu-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        cursor: pointer;
+        background: transparent;
+        border: none;
+        padding: 8px;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .menu-toggle-btn:hover {
+        background: rgba(26, 115, 232, 0.1);
+        border-radius: 50%;
+    }
+    
+    .hamburger-line {
+        width: 20px;
+        height: 2px;
+        background-color: var(--accent);
+        transition: all 0.3s ease;
+    }
+
+@media (max-width: 1024px) {
+        .email-section {
+            margin-left: 0;
+        }
+        .top-bar {
+            left: 0 !important;
+        }
+        
+        .mobile-search-container {
+            display: flex;
+        }
+        .desktop-only {
+            display: none;
+        }
+    }
+</style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar hidden" id="sidebar">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/logo1.png') }}" alt="Roxli Mail Logo" style="width: 120px; height: auto;">
+            <span style="margin-left: 8px; font-size: 18px; font-weight: bold; color: #1a73e8;">MAIL</span>
+        </div>
+        <button class="compose-btn" onclick="window.location.href='/compose'">
+            <i class="fa-solid fa-pencil"></i> Compose
+        </button>
+        <div class="menu-item" onclick="filterCategory('All')" data-category="All">All Mail</div>
+        <div class="menu-item" onclick="filterCategory('Inbox')" data-category="Inbox">Inbox</div>
+        <div class="menu-item" onclick="filterCategory('Starred')" data-category="Starred">Starred</div>
+        <div class="menu-item" onclick="filterCategory('Sent')" data-category="Sent">Sent</div>
+        <div class="menu-item" onclick="filterCategory('Drafts')" data-category="Drafts">Drafts</div>
+    </div>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <button class="menu-toggle-btn" aria-label="Toggle Menu" onclick="toggleSidebar()">
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+        </button>
+
+        
+        <div class="mobile-search-container">
+            <input type="text" id="mobileMailSearch" placeholder="Search mails...">
+            <i class="fa-solid fa-search mobile-search-icon"></i>
+        </div>
+        
+        <div style="flex:1"></div>
+        <div class="profile-initials" style="background-color: #667eea;" onclick="toggleDropdown()">
+            {{ user.firstName[0] }}{{ user.lastName[0] }}
+        </div>
+        <div class="dropdown" id="profileDropdown">
+            <div class="dropdown-header">
+                <div class="profile-initials" style="background-color: #667eea; width: 40px; height: 40px; font-size: 16px;">
+                    {{ user.firstName[0] }}{{ user.lastName[0] }}
+                </div>
+                <div>
+                    <div class="dropdown-name">{{ user.firstName }} {{ user.lastName }}</div>
+                    <div class="dropdown-email">{{ user.email }}</div>
+                </div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" onclick="window.open('https://account.roxli.in', '_blank')">
+                <i class="fa-solid fa-user"></i>
+                <span>Manage your Account</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-section-title">Switch accounts</div>
+            <div id="savedAccountsList"></div>
+            <div class="dropdown-item" onclick="addNewAccount()">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add another account</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" onclick="logout()">
+                <i class="fa-solid fa-sign-out-alt"></i>
+                <span>Sign out</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Section -->
+    <div class="email-section">
+        <div class="email-search desktop-only">
+            <input type="text" id="mailSearch" placeholder="Search mails...">
+        </div>
+
+        <div class="email-list" id="mailList">
+            <!-- Emails will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Floating Compose Button -->
+    <button class="compose-float-btn" onclick="window.location.href='/compose'">
+        <i class="fa-solid fa-pencil"></i> Compose
+    </button>
+
+<script>
+function toggleDropdown() {
+    const menu = document.getElementById('profileDropdown');
+    if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+    } else {
+        applyDropdownTheme();
+        menu.style.display = 'block';
+    }
+}
+
+function toggleNotificationCenter() {
+    const center = document.getElementById('notificationCenter');
+    if (center && center.style.display === 'block') {
+        center.style.display = 'none';
+    } else if (center) {
+        loadNotificationHistory();
+        center.style.display = 'block';
+    }
+}
+
+function loadNotificationHistory() {
+    const notificationList = document.getElementById('notificationList');
+    if (!notificationList) return;
+    
+    // Get stored notifications from localStorage
+    const storedNotifications = JSON.parse(localStorage.getItem('roxli_notifications') || '[]');
+    
+    if (storedNotifications.length === 0) {
+        notificationList.innerHTML = '<div style="padding: 20px; text-align: center; color: #5f6368; font-size: 14px;">No notifications</div>';
+        return;
+    }
+    
+    notificationList.innerHTML = storedNotifications.slice(0, 10).map(notif => `
+        <div style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer;" onclick="${notif.data && notif.data.email_id ? `window.open('/read/${notif.data.email_id}', '_blank')` : ''}">
+            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #202124;">${notif.title}</div>
+            <div style="font-size: 12px; color: #5f6368; line-height: 1.4;">${notif.body}</div>
+            <div style="font-size: 11px; color: #9aa0a6; margin-top: 4px;">${new Date(notif.timestamp * 1000).toLocaleString()}</div>
+        </div>
+    `).join('');
+}
+
+function clearAllNotifications() {
+    localStorage.removeItem('roxli_notifications');
+    document.getElementById('notificationBadge').style.display = 'none';
+    loadNotificationHistory();
+}
+
+function updateNotificationBadge() {
+    const storedNotifications = JSON.parse(localStorage.getItem('roxli_notifications') || '[]');
+    const badge = document.getElementById('notificationBadge');
+    if (badge) {
+        if (storedNotifications.length > 0) {
+            badge.textContent = storedNotifications.length > 99 ? '99+' : storedNotifications.length;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Apply theme to dropdown elements
+function applyDropdownTheme() {
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const dropdown = document.getElementById('profileDropdown');
+    
+    if (dropdown && isDark) {
+        dropdown.style.backgroundColor = '#2d2e30';
+        dropdown.style.color = '#e8eaed';
+        dropdown.style.border = '1px solid #3c4043';
+        
+        dropdown.querySelectorAll('.dropdown-header').forEach(el => {
+            el.style.backgroundColor = '#2d2e30';
+            el.style.color = '#e8eaed';
+            el.style.borderBottom = '1px solid #3c4043';
+        });
+        
+        dropdown.querySelectorAll('.dropdown-item').forEach(el => {
+            el.style.color = '#e8eaed';
+        });
+        
+        dropdown.querySelectorAll('.dropdown-divider').forEach(el => {
+            el.style.background = '#3c4043';
+        });
+        
+        dropdown.querySelectorAll('.dropdown-name, .account-name').forEach(el => {
+            el.style.color = '#e8eaed';
+        });
+        
+        dropdown.querySelectorAll('.dropdown-email, .dropdown-section-title, .account-email').forEach(el => {
+            el.style.color = '#9aa0a6';
+        });
+    }
+}
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('profileDropdown');
+    if (!e.target.closest('.profile-pic') && !e.target.closest('.profile-initials') && !e.target.closest('.dropdown')) {
+        menu.style.display = 'none';
+    }
+});
+
+function filterCategory(category) {
+    document.querySelectorAll('.email-item').forEach(item => {
+        if(category === 'All' || item.dataset.category === category) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function setupSearchListeners() {
+    const desktopSearch = document.getElementById('mailSearch');
+    const mobileSearch = document.getElementById('mobileMailSearch');
+    
+    const performSearch = function(filter) {
+        filter = filter.toLowerCase();
+        document.querySelectorAll('#mailList .email-item').forEach(function(item) {
+            const text = item.innerText.toLowerCase();
+            item.style.display = text.includes(filter) ? '' : 'none';
+        });
+    };
+    
+    if (desktopSearch) {
+        desktopSearch.addEventListener('input', function() {
+            performSearch(this.value);
+            if (mobileSearch) mobileSearch.value = this.value;
+        });
+    }
+    
+    if (mobileSearch) {
+        mobileSearch.addEventListener('input', function() {
+            performSearch(this.value);
+            if (desktopSearch) desktopSearch.value = this.value;
+        });
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar.classList.contains('hidden')) {
+        sidebar.classList.remove('hidden');
+        sidebar.classList.add('show');
+    } else {
+        sidebar.classList.remove('show');
+        sidebar.classList.add('hidden');
+    }
+}
+
+function refreshEmails() {
+    const refreshBtn = document.querySelector('[onclick="refreshEmails()"] i');
+    if (refreshBtn) {
+        refreshBtn.style.animation = 'spin 1s linear infinite';
+    }
+    
+    loadEmails();
+    
+    setTimeout(() => {
+        if (refreshBtn) {
+            refreshBtn.style.animation = '';
+        }
+        showNotification('Emails refreshed');
+    }, 1000);
+}
+
+// Add spin animation
+if (!document.querySelector('#refresh-animation')) {
+    const style = document.createElement('style');
+    style.id = 'refresh-animation';
+    style.textContent = `
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+function selectAllEmails() {
+    document.querySelectorAll('.email-item').forEach(item => {
+        if (item.style.display !== 'none') {
+            const checkbox = item.querySelector('.email-checkbox');
+            if (checkbox) {
+                checkbox.checked = true;
+                selectedEmails.add(item.dataset.id);
+            }
+        }
+    });
+    updateSelectionUI();
+    showNotification(`${selectedEmails.size} emails selected`);
+}
+
+function deselectAllMails() {
+    document.querySelectorAll('.email-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    selectedEmails.clear();
+    updateSelectionUI();
+}
+
+function logout() {
+    fetch('/api/logout', { method: 'POST' })
+        .then(() => {
+            window.location.href = '/login-required';
+        })
+        .catch(() => {
+            window.location.href = '/login-required';
+        });
+}
+
+let emails = [];
+
+function loadEmails() {
+    fetch('/api/emails')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.emails) {
+                emails = data.emails;
+                renderEmails();
+            } else {
+                emails = [];
+                renderEmails();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading emails:', error);
+            document.getElementById('mailList').innerHTML = '<div style="padding: 20px; text-align: center; color: #5f6368;">Loading emails...</div>';
+            // Retry after 2 seconds
+            setTimeout(loadEmails, 2000);
+        });
+}
+
+function renderEmails() {
+    const emailList = document.getElementById('mailList');
+    
+    if (emails.length > 0) {
+        emailList.innerHTML = emails.map(email => `
+            <div class="email-item ${!email.read ? 'unread' : ''}" data-id="${email.id}" data-category="Inbox" onclick="openEmail('${email.id}')">
+                <input type="checkbox" class="email-checkbox" onclick="event.stopPropagation(); selectEmail('${email.id}', this.checked)">
+                <span class="email-star" onclick="event.stopPropagation(); toggleStar('${email.id}')">${email.starred ? '⭐' : '☆'}</span>
+                <div class="email-avatar">
+                    <div class="avatar-initials" style="background-color: #667eea;">
+                        ${email.from ? email.from[0].toUpperCase() : 'U'}
+                    </div>
+                </div>
+                <div class="email-content">
+                    <div class="email-header">
+                        <div class="email-sender">${email.from || 'Unknown'}</div>
+                        <div class="email-time">${email.time || ''}</div>
+                    </div>
+                    <div class="email-subject">${email.subject || '(No subject)'}</div>
+                    <div class="email-preview">${email.preview || ''}</div>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        emailList.innerHTML = '<div style="padding: 40px; text-align: center; color: #5f6368;">No emails in inbox</div>';
+    }
+}
+
+let selectedEmails = new Set();
+
+function openEmail(emailId) {
+    window.location.href = `/read/${emailId}`;
+}
+
+function toggleStar(emailId) {
+    const email = emails.find(e => e.id === emailId);
+    if (email) {
+        const newStarred = !email.starred;
+        
+        fetch('/api/star-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ emailId, starred: newStarred })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                email.starred = newStarred;
+                renderEmails();
+                showNotification(newStarred ? 'Email starred' : 'Email unstarred');
+            }
+        });
+    }
+}
+
+function selectEmail(emailId, checked) {
+    if (checked) {
+        selectedEmails.add(emailId);
+    } else {
+        selectedEmails.delete(emailId);
+    }
+    updateSelectionUI();
+}
+
+function updateSelectionUI() {
+    const count = selectedEmails.size;
+    const selectionInfo = document.getElementById('selectionInfo');
+    
+    if (count > 0) {
+        if (!selectionInfo) {
+            const info = document.createElement('div');
+            info.id = 'selectionInfo';
+            info.style.cssText = 'margin-left: 15px; font-size: 12px; color: var(--accent); background: rgba(26,115,232,0.1); padding: 4px 8px; border-radius: 12px;';
+            document.querySelector('.top-bar').appendChild(info);
+        }
+        document.getElementById('selectionInfo').innerHTML = `<span>${count}</span> selected`;
+        document.getElementById('selectionInfo').style.display = 'block';
+    } else {
+        if (selectionInfo) selectionInfo.style.display = 'none';
+    }
+}
+
+function deleteSelectedEmails() {
+    if (selectedEmails.size === 0) {
+        showNotification('No emails selected', 'error');
+        return;
+    }
+    
+    if (!confirm(`Delete ${selectedEmails.size} email(s)?`)) return;
+    
+    const emailIds = Array.from(selectedEmails);
+    
+    fetch('/api/delete-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            emails = emails.filter(email => !selectedEmails.has(email.id));
+            selectedEmails.clear();
+            renderEmails();
+            updateSelectionUI();
+            showNotification(`${emailIds.length} emails deleted`);
+        }
+    });
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed; top: 60px; right: 20px; z-index: 1000;
+        background: ${type === 'error' ? '#ea4335' : '#34a853'};
+        color: white; padding: 12px 20px; border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        document.body.removeChild(notification);
+    }, 3000);
+}
+
+window.addEventListener('load', function() {
+    document.getElementById('sidebar').classList.add('hidden');
+    document.querySelector('.top-bar').style.left = '0';
+    document.querySelector('.email-section').style.marginLeft = '0';
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupSearchListeners();
+    loadEmails();
+    loadSavedAccounts();
+    checkFirstTimeUser();
+    initializeNotifications();
+    updateNotificationBadge();
+});
+
+// Initialize push notifications
+function initializeNotifications() {
+    if ('serviceWorker' in navigator && 'Notification' in window) {
+        // Register service worker
+        navigator.serviceWorker.register('/static/firebase-messaging-sw.js')
+            .then((registration) => {
+                console.log('Service Worker registered:', registration);
+                requestNotificationPermission();
+            })
+            .catch((error) => {
+                console.error('Service Worker registration failed:', error);
+            });
+    }
+}
+
+// Request notification permission and get FCM token
+function requestNotificationPermission() {
+    Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+            console.log('Notification permission granted');
+            // Generate a simple token for demo purposes
+            const token = 'demo_token_' + Math.random().toString(36).substr(2, 9);
+            
+            // Send token to server
+            fetch('/api/subscribe-notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Notification subscription successful');
+                    showNotification('Notifications enabled! You\'ll receive alerts for new emails.');
+                }
+            })
+            .catch(error => {
+                console.error('Error subscribing to notifications:', error);
+            });
+        } else {
+            console.log('Notification permission denied');
+        }
+    });
+}
+
+function loadSavedAccounts() {
+    const savedAccounts = JSON.parse(localStorage.getItem('roxli_accounts') || '[]');
+    const accountsList = document.getElementById('savedAccountsList');
+    const currentEmail = '{{ user.email }}';
+    
+    accountsList.innerHTML = '';
+    
+    const otherAccounts = savedAccounts.filter(acc => acc.email !== currentEmail);
+    
+    if (otherAccounts.length > 0) {
+        otherAccounts.forEach(account => {
+            const accountItem = document.createElement('div');
+            accountItem.className = 'account-item';
+            accountItem.onclick = () => switchToAccount(account.email);
+            accountItem.innerHTML = `
+                <div class="profile-initials account-avatar" style="background-color: ${account.avatarColor || '#667eea'}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: white;">
+                    ${account.firstName[0]}${account.lastName[0]}
+                </div>
+                <div class="account-info">
+                    <div class="account-name">${account.firstName} ${account.lastName}</div>
+                    <div class="account-email">${account.email}</div>
+                </div>
+            `;
+            accountsList.appendChild(accountItem);
+        });
+    }
+}
+
+function addNewAccount() {
+    const popup = window.open('http://localhost:5001/popup', 'roxli-auth', 'width=400,height=600,scrollbars=yes,resizable=yes');
+    
+    const messageHandler = function(event) {
+        if (event.origin !== 'http://localhost:5001') return;
+        
+        if (event.data.type === 'ROXLI_AUTH_SUCCESS') {
+            popup.close();
+            window.removeEventListener('message', messageHandler);
+            
+            // Set token and reload
+            fetch('/api/set-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: event.data.token })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Save account
+                    const savedAccounts = JSON.parse(localStorage.getItem('roxli_accounts') || '[]');
+                    const existingIndex = savedAccounts.findIndex(acc => acc.email === data.user.email);
+                    if (existingIndex === -1) {
+                        savedAccounts.push(data.user);
+                    } else {
+                        savedAccounts[existingIndex] = data.user;
+                    }
+                    localStorage.setItem('roxli_accounts', JSON.stringify(savedAccounts));
+                    
+                    window.location.reload();
+                }
+            });
+        }
+    };
+    
+    window.addEventListener('message', messageHandler);
+}
+
+function switchToAccount(email) {
+    fetch('/api/switch-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            showNotification('Error switching account', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error switching account', 'error');
+    });
+}
+
+function openSwitchPopup(email) {
+    const popup = window.open('http://localhost:5001/popup', 'roxli-auth', 'width=400,height=600,scrollbars=yes,resizable=yes');
+    
+    const messageHandler = function(event) {
+        if (event.origin !== 'http://localhost:5001') return;
+        
+        if (event.data.type === 'ROXLI_AUTH_SUCCESS') {
+            popup.close();
+            window.removeEventListener('message', messageHandler);
+            
+            fetch('/api/set-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: event.data.token })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const savedAccounts = JSON.parse(localStorage.getItem('roxli_accounts') || '[]');
+                    const existingIndex = savedAccounts.findIndex(acc => acc.email === event.data.user.email);
+                    if (existingIndex === -1) {
+                        savedAccounts.push(event.data.user);
+                    } else {
+                        savedAccounts[existingIndex] = event.data.user;
+                    }
+                    localStorage.setItem('roxli_accounts', JSON.stringify(savedAccounts));
+                    
+                    window.location.reload();
+                }
+            });
+        }
+    };
+    
+    window.addEventListener('message', messageHandler);
+}
+
+function openSwitchPopup(email) {
+    const popup = window.open(`http://localhost:5001/popup`, 'roxli-auth', 'width=400,height=600');
+    
+    const messageHandler = function(event) {
+        if (event.origin !== 'http://localhost:5001') return;
+        
+        if (event.data.type === 'ROXLI_AUTH_SUCCESS') {
+            popup.close();
+            window.removeEventListener('message', messageHandler);
+            
+            fetch('/api/set-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: event.data.token })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                }
+            });
+        }
+    };
+    
+    window.addEventListener('message', messageHandler);
+}
+
+function checkFirstTimeUser() {
+    // Always try to send welcome email - server will check if it already exists
+    console.log('Checking for welcome email...');
+    setTimeout(sendWelcomeEmail, 1000);
+}
+
+function sendWelcomeEmail() {
+    console.log('Sending welcome email...');
+    fetch('/api/send-welcome-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => {
+        console.log('Welcome email response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Welcome email response:', data);
+        if (data.success) {
+            showNotification('Welcome email sent! Check your inbox.');
+            setTimeout(loadEmails, 3000);
+        } else {
+            console.error('Failed to send welcome email:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending welcome email:', error);
+    });
+}
+
+document.addEventListener('click', function(e) {
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.querySelector('.menu-toggle-btn');
+    
+    if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        if (sidebar.classList.contains('show')) {
+            sidebar.classList.remove('show');
+            sidebar.classList.add('hidden');
+        }
+    }
+});
+
+// Auto system theme detection
+function setTheme() {
+    const savedTheme = localStorage.getItem('roxli_mail_theme');
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const theme = savedTheme || systemTheme;
+    document.documentElement.setAttribute('data-theme', theme);
+}
+
+// Set theme on load
+setTheme();
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setTheme);
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'c' && !e.ctrlKey && !e.metaKey) {
+        window.location.href = '/compose';
+    } else if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+        refreshMails();
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedEmails.size > 0) {
+            deleteSelectedEmails();
+        }
+    } else if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        selectAllMails();
+    }
+});
+
+// Auto-refresh emails every 30 seconds and check for notifications
+setInterval(() => {
+    loadEmails();
+    checkForNewEmails();
+    checkForNotifications();
+}, 10000); // Check every 10 seconds for better responsiveness
+
+// Check for new notifications from server
+function checkForNotifications() {
+    fetch('/api/notifications')
+        .then(response => response.json())
+        .then(data => {
+            if (data.notifications && data.notifications.length > 0) {
+                data.notifications.forEach(notification => {
+                    showAdvancedNotification(notification);
+                    
+                    // Mark as read after showing
+                    setTimeout(() => {
+                        fetch('/api/mark-notification-read', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ notificationId: notification.id })
+                        });
+                    }, 1000);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error checking notifications:', error);
+        });
+}
+
+// Advanced notification with better UI
+function showAdvancedNotification(notification) {
+    // Browser notification
+    if (Notification.permission === 'granted') {
+        const browserNotif = new Notification(notification.title, {
+            body: notification.body,
+            icon: '/static/images/logo.png',
+            badge: '/static/images/logo.png',
+            tag: 'roxli-mail-' + notification.id,
+            requireInteraction: true,
+            actions: [
+                { action: 'view', title: 'View Email' },
+                { action: 'dismiss', title: 'Dismiss' }
+            ]
+        });
+        
+        browserNotif.onclick = function() {
+            if (notification.data && notification.data.email_id) {
+                window.open(`/read/${notification.data.email_id}`, '_blank');
+            }
+            browserNotif.close();
+        };
+        
+        // Auto close after 8 seconds
+        setTimeout(() => browserNotif.close(), 8000);
+    }
+    
+    // In-app notification
+    showInAppNotification(notification);
+}
+
+// Enhanced in-app notification
+function showInAppNotification(notification) {
+    // Store notification in localStorage
+    const storedNotifications = JSON.parse(localStorage.getItem('roxli_notifications') || '[]');
+    storedNotifications.unshift(notification);
+    // Keep only last 50 notifications
+    if (storedNotifications.length > 50) {
+        storedNotifications.splice(50);
+    }
+    localStorage.setItem('roxli_notifications', JSON.stringify(storedNotifications));
+    updateNotificationBadge();
+    
+    const notifContainer = document.createElement('div');
+    notifContainer.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        background: linear-gradient(135deg, #1a73e8 0%, #667eea 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(26, 115, 232, 0.3);
+        max-width: 350px;
+        animation: slideInRight 0.3s ease-out;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+    `;
+    
+    notifContainer.innerHTML = `
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                📧
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px; line-height: 1.3;">${notification.title}</div>
+                <div style="font-size: 13px; opacity: 0.9; line-height: 1.4;">${notification.body}</div>
+                <div style="margin-top: 12px; display: flex; gap: 8px;">
+                    ${notification.data && notification.data.email_id ? 
+                        `<button onclick="window.open('/read/${notification.data.email_id}', '_blank'); this.closest('[style*="position: fixed"]').remove();" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 12px; border-radius: 16px; font-size: 12px; cursor: pointer;">View Email</button>` : 
+                        ''
+                    }
+                    <button onclick="this.closest('[style*="position: fixed"]').remove();" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 4px 12px; border-radius: 16px; font-size: 12px; cursor: pointer;">Dismiss</button>
+                </div>
+            </div>
+            <button onclick="this.closest('[style*="position: fixed"]').remove();" style="background: none; border: none; color: rgba(255,255,255,0.8); font-size: 18px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0;">
+                ×
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notifContainer);
+    
+    // Auto remove after 10 seconds
+    setTimeout(() => {
+        if (notifContainer.parentNode) {
+            notifContainer.style.animation = 'slideOutRight 0.3s ease-in';
+            setTimeout(() => {
+                if (notifContainer.parentNode) {
+                    notifContainer.remove();
+                }
+            }, 300);
+        }
+    }, 10000);
+}
+
+// Add CSS animations
+if (!document.querySelector('#notification-animations')) {
+    const style = document.createElement('style');
+    style.id = 'notification-animations';
+    style.textContent = `
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Check for new emails and show notifications
+function checkForNewEmails() {
+    const lastEmailCount = localStorage.getItem('last_email_count') || '0';
+    
+    if (emails.length > parseInt(lastEmailCount)) {
+        const newEmailsCount = emails.length - parseInt(lastEmailCount);
+        if (newEmailsCount > 0 && parseInt(lastEmailCount) > 0) {
+            showBrowserNotification(
+                `${newEmailsCount} new email${newEmailsCount > 1 ? 's' : ''}`,
+                'Click to view your inbox'
+            );
+        }
+    }
+    
+    localStorage.setItem('last_email_count', emails.length.toString());
+}
+
+// Show browser notification
+function showBrowserNotification(title, body) {
+    if (Notification.permission === 'granted') {
+        const notification = new Notification(title, {
+            body,
+            icon: '/static/images/logo.png',
+            badge: '/static/images/logo.png',
+            tag: 'roxli-mail-new',
+            requireInteraction: true
+        });
+        
+        notification.onclick = function() {
+            window.focus();
+            notification.close();
+        };
+        
+        // Auto close after 5 seconds
+        setTimeout(() => {
+            notification.close();
+        }, 5000);
+    }
+}
+
+
+</script>
+
+</body>
+</html>

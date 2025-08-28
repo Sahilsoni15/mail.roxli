@@ -17,30 +17,28 @@ JWT_SECRET = 'roxli_jwt_secret_key_2024'
 TOKEN_EXPIRY = timedelta(days=60)
 SESSION_EXPIRY = timedelta(days=60)
 
-# Firebase initialization - Dual setup
+# Firebase initialization
 try:
-    # Try environment variable first (for Railway)
     firebase_config = os.environ.get('FIREBASE_CONFIG')
     if firebase_config:
         import json
-        auth_cred = credentials.Certificate(json.loads(firebase_config))
-        mail_cred = credentials.Certificate(json.loads(firebase_config))
+        cred = credentials.Certificate(json.loads(firebase_config))
     else:
-        # Fallback to local files
-        auth_cred = credentials.Certificate('../Roxli/firebase-key.json')
-        mail_cred = credentials.Certificate('roxli-mail-firebase-adminsdk-fbsvc-68633609db.json')
+        cred = credentials.Certificate('roxli-mail-firebase-adminsdk-fbsvc-68633609db.json')
     
-    auth_app = firebase_admin.initialize_app(auth_cred, {
-        'databaseURL': 'https://roxli-5aebd-default-rtdb.firebaseio.com/'
-    }, name='auth')
-    
-    # Use same database for mail
-    mail_app = firebase_admin.initialize_app(mail_cred, {
+    mail_app = firebase_admin.initialize_app(cred, {
         'databaseURL': 'https://roxli-5aebd-default-rtdb.firebaseio.com/'
     }, name='mail')
+    
+    print("Firebase mail app initialized successfully")
 except Exception as e:
     print(f"Firebase initialization failed: {e}")
-    pass
+    try:
+        mail_app = firebase_admin.initialize_app(name='mail')
+        print("Firebase mail app initialized with default credentials")
+    except:
+        print("Failed to initialize Firebase app")
+        mail_app = None
 
 # Security headers
 @app.after_request
@@ -214,7 +212,7 @@ def get_emails():
     
     try:
         # Get emails from mail Firebase for this user only
-        mail_db = db.reference('emails', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('emails', app=mail_app)
         user_emails = mail_db.child(user['id']).child('inbox').get() or {}
         
         emails = []
@@ -284,7 +282,7 @@ def send_email():
     current_hour = datetime.now().strftime('%Y%m%d%H')
     
     try:
-        mail_db = db.reference('emails', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('emails', app=mail_app)
         
         # Check rate limit
         rate_data = mail_db.child('rate_limits').child(rate_limit_key).child(current_hour).get() or 0
@@ -321,7 +319,7 @@ def send_email():
         mail_db.child(user['id']).child('sent').child(email_id).set(email_data)
         
         # Find recipient and add to their inbox
-        auth_db = db.reference('users', app=firebase_admin.get_app('auth'))
+        auth_db = db.reference('users', app=mail_app)
         all_users = auth_db.get() or {}
         
         recipient_id = None
@@ -393,7 +391,7 @@ def star_email():
     starred = data.get('starred', True)
     
     try:
-        mail_db = db.reference('emails', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('emails', app=mail_app)
         mail_db.child(user['id']).child('inbox').child(email_id).update({'starred': starred})
         return jsonify({'success': True})
     except Exception as e:
@@ -409,7 +407,7 @@ def mark_read():
     email_id = data.get('emailId')
     
     try:
-        mail_db = db.reference('emails', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('emails', app=mail_app)
         mail_db.child(user['id']).child('inbox').child(email_id).update({'read': True})
         return jsonify({'success': True})
     except Exception as e:
@@ -425,7 +423,7 @@ def delete_email():
     email_ids = data.get('emailIds', [])
     
     try:
-        mail_db = db.reference('emails', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('emails', app=mail_app)
         for email_id in email_ids:
             mail_db.child(user['id']).child('inbox').child(email_id).delete()
         return jsonify({'success': True})
@@ -443,7 +441,7 @@ def get_email(email_id):
         return jsonify({'error': 'Invalid email ID'}), 400
     
     try:
-        mail_db = db.reference('emails', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('emails', app=mail_app)
         
         # Try to get from inbox first
         email_data = mail_db.child(user['id']).child('inbox').child(email_id).get()
@@ -531,7 +529,7 @@ def send_welcome_email():
         return jsonify({'error': 'Not authenticated'}), 401
     
     try:
-        mail_db = db.reference('emails', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('emails', app=mail_app)
         
         # Check if welcome email already exists for this user
         existing_emails = mail_db.child(user['id']).child('inbox').get() or {}
@@ -724,7 +722,7 @@ def subscribe_notifications():
     token = data.get('token')
     
     try:
-        mail_db = db.reference('notifications', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('notifications', app=mail_app)
         mail_db.child('user_settings').child(user['id']).update({
             'notifications_enabled': True,
             'token': token,
@@ -742,7 +740,7 @@ def get_notifications():
         return jsonify({'error': 'Not authenticated'}), 401
     
     try:
-        mail_db = db.reference('notifications', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('notifications', app=mail_app)
         user_notifications = mail_db.child('user_notifications').child(user['id']).get() or {}
         
         notifications = []
@@ -774,7 +772,7 @@ def mark_notification_read():
     notification_id = data.get('notificationId')
     
     try:
-        mail_db = db.reference('notifications', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('notifications', app=mail_app)
         mail_db.child('user_notifications').child(user['id']).child(notification_id).update({'read': True})
         return jsonify({'success': True})
     except Exception as e:
@@ -783,7 +781,7 @@ def mark_notification_read():
 def send_notification_to_user(user_id, title, body, data=None):
     try:
         # Store notification in database for client-side polling
-        mail_db = db.reference('notifications', app=firebase_admin.get_app('mail'))
+        mail_db = db.reference('notifications', app=mail_app)
         notification_id = str(uuid.uuid4())
         
         notification_data = {

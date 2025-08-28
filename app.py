@@ -18,18 +18,26 @@ SESSION_EXPIRY = timedelta(days=60)
 
 # Firebase initialization - Dual setup
 try:
-    # Main Firebase for authentication
-    auth_cred = credentials.Certificate('../Roxli/firebase-key.json')
+    # Try environment variable first (for Railway)
+    firebase_config = os.environ.get('FIREBASE_CONFIG')
+    if firebase_config:
+        import json
+        auth_cred = credentials.Certificate(json.loads(firebase_config))
+        mail_cred = credentials.Certificate(json.loads(firebase_config))
+    else:
+        # Fallback to local files
+        auth_cred = credentials.Certificate('../Roxli/firebase-key.json')
+        mail_cred = credentials.Certificate('roxli-mail-firebase-adminsdk-fbsvc-68633609db.json')
+    
     auth_app = firebase_admin.initialize_app(auth_cred, {
         'databaseURL': 'https://roxli-5aebd-default-rtdb.firebaseio.com/'
     }, name='auth')
     
-    # Mail Firebase for email data
-    mail_cred = credentials.Certificate('roxli-mail-firebase-adminsdk-fbsvc-68633609db.json')
     mail_app = firebase_admin.initialize_app(mail_cred, {
         'databaseURL': 'https://roxli-mail-default-rtdb.firebaseio.com/'
     }, name='mail')
-except ValueError:
+except Exception as e:
+    print(f"Firebase initialization failed: {e}")
     pass
 
 # Security headers

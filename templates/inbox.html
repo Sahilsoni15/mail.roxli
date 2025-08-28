@@ -1050,37 +1050,53 @@ function requestNotificationPermission() {
     });
 }
 
-function loadSavedAccounts() {
-    const savedAccounts = JSON.parse(localStorage.getItem('roxli_accounts') || '[]');
-    const accountsList = document.getElementById('savedAccountsList');
-    const currentEmail = '{{ user.email }}';
-    
-    accountsList.innerHTML = '';
-    
-    const otherAccounts = savedAccounts.filter(acc => acc.email !== currentEmail);
-    
-    if (otherAccounts.length > 0) {
-        otherAccounts.forEach(account => {
-            const accountItem = document.createElement('div');
-            accountItem.className = 'account-item';
-            accountItem.onclick = () => switchToAccount(account.email);
-            accountItem.innerHTML = `
-                <div class="account-avatar-wrapper" style="position: relative; width: 32px; height: 32px;">
-                    ${account.avatar ? 
-                        `<img src="${account.avatar}" alt="${account.firstName}" class="account-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
-                        ''
-                    }
-                    <div class="profile-initials account-avatar" style="background-color: ${account.avatarColor || '#667eea'}; display: ${account.avatar ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: white; width: 32px; height: 32px; border-radius: 50%; position: ${account.avatar ? 'absolute' : 'static'}; top: 0; left: 0;">
-                        ${account.firstName[0]}${account.lastName[0]}
-                    </div>
-                </div>
-                <div class="account-info">
-                    <div class="account-name">${account.firstName} ${account.lastName}</div>
-                    <div class="account-email">${account.email}</div>
-                </div>
-            `;
-            accountsList.appendChild(accountItem);
-        });
+async function loadSavedAccounts() {
+    try {
+        const loggedInEmails = JSON.parse(localStorage.getItem('roxli_logged_accounts') || '[]');
+        const currentEmail = '{{ user.email }}';
+        
+        // Add current user to logged accounts if not already there
+        if (!loggedInEmails.includes(currentEmail)) {
+            loggedInEmails.push(currentEmail);
+            localStorage.setItem('roxli_logged_accounts', JSON.stringify(loggedInEmails));
+        }
+        
+        const emailParams = loggedInEmails.map(email => `emails=${encodeURIComponent(email)}`).join('&');
+        const response = await fetch(`/api/available-accounts?${emailParams}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            const accountsList = document.getElementById('savedAccountsList');
+            accountsList.innerHTML = '';
+            
+            const otherAccounts = data.accounts.filter(acc => acc.email !== currentEmail);
+            
+            if (otherAccounts.length > 0) {
+                otherAccounts.forEach(account => {
+                    const accountItem = document.createElement('div');
+                    accountItem.className = 'account-item';
+                    accountItem.onclick = () => switchToAccount(account.email);
+                    accountItem.innerHTML = `
+                        <div class="account-avatar-wrapper" style="position: relative; width: 32px; height: 32px;">
+                            ${account.avatar && !account.avatar.includes('data:image/svg+xml') ? 
+                                `<img src="${account.avatar}" alt="${account.firstName}" class="account-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
+                                ''
+                            }
+                            <div class="profile-initials" style="background: linear-gradient(135deg, #667eea, #764ba2); display: ${account.avatar && !account.avatar.includes('data:image/svg+xml') ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: white; width: 32px; height: 32px; border-radius: 50%; position: ${account.avatar && !account.avatar.includes('data:image/svg+xml') ? 'absolute' : 'static'}; top: 0; left: 0;">
+                                ${account.firstName[0]}${account.lastName[0]}
+                            </div>
+                        </div>
+                        <div class="account-info">
+                            <div class="account-name">${account.firstName} ${account.lastName}</div>
+                            <div class="account-email">${account.email}</div>
+                        </div>
+                    `;
+                    accountsList.appendChild(accountItem);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading saved accounts:', error);
     }
 }
 
@@ -1103,15 +1119,12 @@ function addNewAccount() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Save account
-                    const savedAccounts = JSON.parse(localStorage.getItem('roxli_accounts') || '[]');
-                    const existingIndex = savedAccounts.findIndex(acc => acc.email === data.user.email);
-                    if (existingIndex === -1) {
-                        savedAccounts.push(data.user);
-                    } else {
-                        savedAccounts[existingIndex] = data.user;
+                    // Save account to logged accounts list
+                    const loggedAccounts = JSON.parse(localStorage.getItem('roxli_logged_accounts') || '[]');
+                    if (!loggedAccounts.includes(data.user.email)) {
+                        loggedAccounts.push(data.user.email);
+                        localStorage.setItem('roxli_logged_accounts', JSON.stringify(loggedAccounts));
                     }
-                    localStorage.setItem('roxli_accounts', JSON.stringify(savedAccounts));
                     
                     window.location.reload();
                 }
@@ -1159,14 +1172,11 @@ function openSwitchPopup(email) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    const savedAccounts = JSON.parse(localStorage.getItem('roxli_accounts') || '[]');
-                    const existingIndex = savedAccounts.findIndex(acc => acc.email === event.data.user.email);
-                    if (existingIndex === -1) {
-                        savedAccounts.push(event.data.user);
-                    } else {
-                        savedAccounts[existingIndex] = event.data.user;
+                    const loggedAccounts = JSON.parse(localStorage.getItem('roxli_logged_accounts') || '[]');
+                    if (!loggedAccounts.includes(event.data.user.email)) {
+                        loggedAccounts.push(event.data.user.email);
+                        localStorage.setItem('roxli_logged_accounts', JSON.stringify(loggedAccounts));
                     }
-                    localStorage.setItem('roxli_accounts', JSON.stringify(savedAccounts));
                     
                     window.location.reload();
                 }

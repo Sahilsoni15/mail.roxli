@@ -49,6 +49,36 @@
             color: #5f6368;
             margin-bottom: 32px;
         }
+        
+        /* Dark theme text visibility */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #202124 !important;
+                color: #e8eaed !important;
+            }
+            
+            .login-container {
+                background: #2d2e30 !important;
+                color: #e8eaed !important;
+                border: 1px solid #3c4043;
+            }
+            
+            h1 {
+                color: #e8eaed !important;
+            }
+            
+            .subtitle {
+                color: #9aa0a6 !important;
+            }
+            
+            .help-text {
+                color: #9aa0a6 !important;
+            }
+            
+            .help-text a {
+                color: #8ab4f8 !important;
+            }
+        }
 
         .sign-in-btn {
             background: #1a73e8;
@@ -138,13 +168,41 @@
         if (theme === 'dark') {
             document.body.style.background = '#202124';
             document.body.style.color = '#e8eaed';
-            document.querySelector('.login-container').style.background = '#2d2e30';
-            document.querySelector('.login-container').style.color = '#e8eaed';
+            const container = document.querySelector('.login-container');
+            container.style.background = '#2d2e30';
+            container.style.color = '#e8eaed';
+            container.style.border = '1px solid #3c4043';
+            
+            const h1 = document.querySelector('h1');
+            if (h1) h1.style.color = '#e8eaed';
+            
+            const subtitle = document.querySelector('.subtitle');
+            if (subtitle) subtitle.style.color = '#9aa0a6';
+            
+            const helpText = document.querySelector('.help-text');
+            if (helpText) helpText.style.color = '#9aa0a6';
+            
+            const helpLink = document.querySelector('.help-text a');
+            if (helpLink) helpLink.style.color = '#8ab4f8';
         } else {
             document.body.style.background = '#f8f9fa';
-            document.body.style.color = '#1d1d1f';
-            document.querySelector('.login-container').style.background = 'white';
-            document.querySelector('.login-container').style.color = '#1d1d1f';
+            document.body.style.color = '#202124';
+            const container = document.querySelector('.login-container');
+            container.style.background = 'white';
+            container.style.color = '#202124';
+            container.style.border = 'none';
+            
+            const h1 = document.querySelector('h1');
+            if (h1) h1.style.color = '#202124';
+            
+            const subtitle = document.querySelector('.subtitle');
+            if (subtitle) subtitle.style.color = '#5f6368';
+            
+            const helpText = document.querySelector('.help-text');
+            if (helpText) helpText.style.color = '#5f6368';
+            
+            const helpLink = document.querySelector('.help-text a');
+            if (helpLink) helpLink.style.color = '#1a73e8';
         }
     }
     

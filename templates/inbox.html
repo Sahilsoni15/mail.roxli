@@ -1065,8 +1065,14 @@ function loadSavedAccounts() {
             accountItem.className = 'account-item';
             accountItem.onclick = () => switchToAccount(account.email);
             accountItem.innerHTML = `
-                <div class="profile-initials account-avatar" style="background-color: ${account.avatarColor || '#667eea'}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: white;">
-                    ${account.firstName[0]}${account.lastName[0]}
+                <div class="account-avatar-wrapper" style="position: relative; width: 32px; height: 32px;">
+                    ${account.avatar ? 
+                        `<img src="${account.avatar}" alt="${account.firstName}" class="account-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
+                        ''
+                    }
+                    <div class="profile-initials account-avatar" style="background-color: ${account.avatarColor || '#667eea'}; display: ${account.avatar ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: white; width: 32px; height: 32px; border-radius: 50%; position: ${account.avatar ? 'absolute' : 'static'}; top: 0; left: 0;">
+                        ${account.firstName[0]}${account.lastName[0]}
+                    </div>
                 </div>
                 <div class="account-info">
                     <div class="account-name">${account.firstName} ${account.lastName}</div>

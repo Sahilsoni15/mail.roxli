@@ -34,8 +34,9 @@ try:
         'databaseURL': 'https://roxli-5aebd-default-rtdb.firebaseio.com/'
     }, name='auth')
     
+    # Use same database for mail
     mail_app = firebase_admin.initialize_app(mail_cred, {
-        'databaseURL': 'https://roxli-mail-default-rtdb.firebaseio.com/'
+        'databaseURL': 'https://roxli-5aebd-default-rtdb.firebaseio.com/'
     }, name='mail')
 except Exception as e:
     print(f"Firebase initialization failed: {e}")

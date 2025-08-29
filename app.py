@@ -628,7 +628,7 @@ def send_welcome_email():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Roxli Mail</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8f9fa;">
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8f9fa; color: #202124;">
     <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #1a73e8 0%, #667eea 100%); padding: 40px 30px; text-align: center; color: white;">
@@ -640,14 +640,14 @@ def send_welcome_email():
         </div>
         
         <!-- Content -->
-        <div style="padding: 40px 30px;">
+        <div style="padding: 40px 30px; color: #202124;">
             <!-- Getting Started -->
             <div style="margin-bottom: 40px;">
                 <h2 style="color: #1a73e8; font-size: 24px; margin: 0 0 20px 0; display: flex; align-items: center;">
                     <span style="background: #e8f0fe; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 20px;">🚀</span>
                     Quick Start Guide
                 </h2>
-                <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 4px solid #1a73e8;">
+                <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 4px solid #1a73e8; color: #202124;">
                     <div style="display: flex; align-items: center; margin-bottom: 15px;">
                         <span style="background: #1a73e8; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">1</span>
                         <span><strong>Compose:</strong> Click the blue compose button to send your first email</span>
@@ -705,14 +705,14 @@ def send_welcome_email():
             </div>
             
             <!-- Support -->
-            <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
+            <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0; color: #202124;">
                 <p style="margin: 0 0 10px 0; color: #5f6368;">Need help? We're here for you!</p>
                 <p style="margin: 0; font-size: 14px;">Reply to this email or visit our <a href="#" style="color: #1a73e8;">Help Center</a></p>
             </div>
         </div>
         
         <!-- Footer -->
-        <div style="background: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+        <div style="background: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0; color: #202124;">
             <p style="margin: 0 0 10px 0; color: #1a73e8; font-weight: 600; font-size: 16px;">The Roxli Mail Team</p>
             <p style="margin: 0 0 15px 0; color: #5f6368; font-size: 14px;">Making email secure, simple, and beautiful</p>
             <div style="font-size: 12px; color: #9aa0a6; line-height: 1.5;">

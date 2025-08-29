@@ -2,13 +2,14 @@
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
+// Replace with your actual Firebase config
 const firebaseConfig = {
-    apiKey: "AIzaSyDummy",
-    authDomain: "roxli-mail.firebaseapp.com",
-    projectId: "roxli-mail",
-    storageBucket: "roxli-mail.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:dummy"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "your-project.firebaseapp.com",
+    projectId: "your-project-id",
+    storageBucket: "your-project.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
 firebase.initializeApp(firebaseConfig);

@@ -775,15 +775,39 @@ def subscribe_notifications():
     
     data = request.json
     token = data.get('token')
+    notification_type = data.get('type', 'browser')  # 'fcm' or 'browser'
+    
+    if not token:
+        return jsonify({'error': 'Token required'}), 400
     
     try:
         mail_db = db.reference('notifications', app=mail_app)
-        mail_db.child('user_settings').child(user['id']).update({
+        
+        # Store user's notification preferences and token
+        user_settings = {
             'notifications_enabled': True,
             'token': token,
-            'subscribed_at': datetime.now().timestamp()
-        })
-        return jsonify({'success': True})
+            'type': notification_type,
+            'subscribed_at': datetime.now().timestamp(),
+            'user_agent': request.headers.get('User-Agent', '')[:200],
+            'ip_address': request.remote_addr
+        }
+        
+        mail_db.child('user_settings').child(user['id']).update(user_settings)
+        
+        # Test notification
+        if notification_type == 'fcm':
+            try:
+                send_fcm_notification(
+                    token,
+                    "Roxli Mail Notifications Enabled",
+                    "You'll now receive push notifications for new emails!",
+                    {'type': 'test'}
+                )
+            except Exception as e:
+                print(f"Failed to send test FCM notification: {e}")
+        
+        return jsonify({'success': True, 'message': 'Notifications enabled successfully'})
     except Exception as e:
         print(f"Error subscribing to notifications: {e}")
         return jsonify({'error': 'Failed to subscribe'}), 500
@@ -833,7 +857,32 @@ def mark_notification_read():
     except Exception as e:
         return jsonify({'error': 'Failed to mark notification as read'}), 500
 
+def send_fcm_notification(token, title, body, data=None):
+    """Send FCM push notification"""
+    try:
+        if not mail_app:
+            print("Firebase app not initialized")
+            return False
+        
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=title,
+                body=body
+            ),
+            data=data or {},
+            token=token
+        )
+        
+        response = messaging.send(message, app=mail_app)
+        print(f"FCM notification sent successfully: {response}")
+        return True
+        
+    except Exception as e:
+        print(f"Error sending FCM notification: {e}")
+        return False
+
 def send_notification_to_user(user_id, title, body, data=None):
+    """Send notification to user via FCM and store in database"""
     try:
         # Store notification in database for client-side polling
         mail_db = db.reference('notifications', app=mail_app)
@@ -851,6 +900,23 @@ def send_notification_to_user(user_id, title, body, data=None):
         
         # Store notification
         mail_db.child('user_notifications').child(user_id).child(notification_id).set(notification_data)
+        
+        # Get user's FCM token and send push notification
+        try:
+            user_settings = mail_db.child('user_settings').child(user_id).get()
+            if user_settings and user_settings.get('notifications_enabled') and user_settings.get('token'):
+                token = user_settings['token']
+                notification_type = user_settings.get('type', 'browser')
+                
+                if notification_type == 'fcm':
+                    send_fcm_notification(token, title, body, data)
+                    print(f"FCM notification sent to user {user_id}")
+                else:
+                    print(f"Browser notification stored for user {user_id}")
+            else:
+                print(f"No FCM token found for user {user_id}")
+        except Exception as e:
+            print(f"Error sending push notification: {e}")
         
         print(f"Notification stored for user {user_id}: {title}")
         return True

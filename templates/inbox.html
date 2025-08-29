@@ -16,6 +16,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/logo.png') }}">
 <link rel="shortcut icon" href="{{ url_for('static', filename='images/logo.png') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
 
 <style>
     :root { --accent: #1a73e8; }
@@ -672,6 +674,21 @@
             <input type="text" id="mailSearch" placeholder="Search mails...">
         </div>
 
+        <!-- Notification Permission Banner -->
+        <div id="notificationBanner" style="display: none; background: linear-gradient(135deg, #1a73e8 0%, #667eea 100%); color: white; padding: 15px 20px; margin: 10px 0; border-radius: 12px; box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="font-size: 24px;">🔔</div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; margin-bottom: 4px;">Enable Email Notifications</div>
+                    <div style="font-size: 13px; opacity: 0.9;">Get instant alerts when you receive new emails</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="enableNotifications()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; font-weight: 500;">Enable</button>
+                    <button onclick="dismissNotificationBanner()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer;">Later</button>
+                </div>
+            </div>
+        </div>
+
         <div class="email-list" id="mailList">
             <!-- Emails will be loaded here -->
         </div>
@@ -1060,45 +1077,130 @@ document.addEventListener('DOMContentLoaded', function() {
     loadEmails();
     loadSavedAccounts();
     checkFirstTimeUser();
+    checkNotificationPermission();
     initializeNotifications();
     updateNotificationBadge();
 });
 
-// Initialize push notifications
-function initializeNotifications() {
-    if ('Notification' in window) {
-        requestNotificationPermission();
+// Check if we should show notification permission banner
+function checkNotificationPermission() {
+    const dismissed = localStorage.getItem('notification_banner_dismissed');
+    const hasPermission = Notification.permission === 'granted';
+    
+    if (!dismissed && !hasPermission && 'Notification' in window) {
+        document.getElementById('notificationBanner').style.display = 'block';
     }
 }
 
-// Request notification permission and get FCM token
-function requestNotificationPermission() {
-    Notification.requestPermission().then((permission) => {
-        if (permission === 'granted') {
-            console.log('Notification permission granted');
-            // Generate a simple token for demo purposes
-            const token = 'demo_token_' + Math.random().toString(36).substr(2, 9);
-            
-            // Send token to server
-            fetch('/api/subscribe-notifications', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Notification subscription successful');
-                    showNotification('Notifications enabled! You\'ll receive alerts for new emails.');
-                }
-            })
-            .catch(error => {
-                console.error('Error subscribing to notifications:', error);
-            });
+// Enable notifications when user clicks enable
+function enableNotifications() {
+    initializeNotifications();
+    dismissNotificationBanner();
+}
+
+// Dismiss notification banner
+function dismissNotificationBanner() {
+    document.getElementById('notificationBanner').style.display = 'none';
+    localStorage.setItem('notification_banner_dismissed', 'true');
+}
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyDummy",
+    authDomain: "roxli-mail.firebaseapp.com",
+    projectId: "roxli-mail",
+    storageBucket: "roxli-mail.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:dummy"
+};
+
+let messaging = null;
+
+// Initialize Firebase and notifications
+function initializeNotifications() {
+    try {
+        firebase.initializeApp(firebaseConfig);
+        messaging = firebase.messaging();
+        
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/firebase-messaging-sw.js')
+                .then((registration) => {
+                    console.log('Service Worker registered:', registration);
+                    messaging.useServiceWorker(registration);
+                    requestNotificationPermission();
+                })
+                .catch((error) => {
+                    console.error('Service Worker registration failed:', error);
+                    // Fallback to browser notifications
+                    requestBrowserNotificationPermission();
+                });
         } else {
-            console.log('Notification permission denied');
+            requestBrowserNotificationPermission();
         }
-    });
+        
+        // Handle foreground messages
+        messaging.onMessage((payload) => {
+            console.log('Foreground message received:', payload);
+            showAdvancedNotification({
+                title: payload.notification.title,
+                body: payload.notification.body,
+                data: payload.data
+            });
+        });
+        
+    } catch (error) {
+        console.error('Firebase initialization failed:', error);
+        requestBrowserNotificationPermission();
+    }
+}
+
+// Request FCM token and notification permission
+function requestNotificationPermission() {
+    messaging.getToken({ vapidKey: 'YOUR_VAPID_KEY' })
+        .then((currentToken) => {
+            if (currentToken) {
+                console.log('FCM Token:', currentToken);
+                
+                // Send token to server
+                fetch('/api/subscribe-notifications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: currentToken, type: 'fcm' })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('FCM subscription successful');
+                        showNotification('Push notifications enabled! You\'ll receive alerts for new emails.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error subscribing to FCM:', error);
+                });
+            } else {
+                console.log('No registration token available.');
+                requestBrowserNotificationPermission();
+            }
+        })
+        .catch((err) => {
+            console.log('An error occurred while retrieving token:', err);
+            requestBrowserNotificationPermission();
+        });
+}
+
+// Fallback to browser notifications
+function requestBrowserNotificationPermission() {
+    if ('Notification' in window) {
+        Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                console.log('Browser notification permission granted');
+                showNotification('Browser notifications enabled!');
+            } else {
+                console.log('Notification permission denied');
+            }
+        });
+    }
 }
 
 async function loadSavedAccounts() {
@@ -1404,11 +1506,14 @@ function showAdvancedNotification(notification) {
     showInAppNotification(notification);
 }
 
-// Enhanced in-app notification
+// Enhanced in-app notification with better permission handling
 function showInAppNotification(notification) {
     // Store notification in localStorage
     const storedNotifications = JSON.parse(localStorage.getItem('roxli_notifications') || '[]');
-    storedNotifications.unshift(notification);
+    storedNotifications.unshift({
+        ...notification,
+        timestamp: Date.now() / 1000
+    });
     // Keep only last 50 notifications
     if (storedNotifications.length > 50) {
         storedNotifications.splice(50);

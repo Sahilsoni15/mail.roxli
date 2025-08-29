@@ -978,7 +978,7 @@ function renderEmails() {
 <<<<<<< HEAD
                     <div class="email-preview">${email.preview ? email.preview.split(' ').slice(0, 3).join(' ') + (email.preview.split(' ').length > 3 ? '...' : '') : ''}</div>
 =======
-                    <div class="email-preview">${email.preview ? (email.preview.length > 50 ? email.preview.substring(0, 50) + '...' : email.preview) : ''}</div>
+                    <div class="email-preview">${email.preview ? (email.preview.replace(/<<<<<<< HEAD[\s\S]*?>>>>>>> [a-f0-9]+/g, '').length > 50 ? email.preview.replace(/<<<<<<< HEAD[\s\S]*?>>>>>>> [a-f0-9]+/g, '').substring(0, 50) + '...' : email.preview.replace(/<<<<<<< HEAD[\s\S]*?>>>>>>> [a-f0-9]+/g, '')) : ''}</div>
 >>>>>>> 521f1f83f3e48ac2ffeb4700e78dceb7f1a476fc
                 </div>
             </div>

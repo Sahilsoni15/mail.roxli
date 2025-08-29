@@ -157,7 +157,15 @@ def inbox():
     if not user:
         print("DEBUG: No user found, redirecting to login")
         return redirect(url_for('login_required'))
-    return render_template('inbox.html', user=user)
+    
+    # Firebase config from environment
+    firebase_config = {
+        'firebase_api_key': os.environ.get('FIREBASE_API_KEY', 'AIzaSyBvOiM5mIVfsOK6pyimzpmub0j_BjXnBo0'),
+        'firebase_app_id': os.environ.get('FIREBASE_APP_ID', '1:539072741497:web:8f230f4d2fa8dc8c8b4a67'),
+        'vapid_key': os.environ.get('VAPID_KEY', 'BKnGsuuAaQffxQoyt01Va2rnyibyMcmSaf05hMoprZ_6sk7FuQjl0WvsCpjcp6p7AzSHjjwA4NCTBbdK-Za6SCU')
+    }
+    
+    return render_template('inbox.html', user=user, **firebase_config)
 
 @app.route('/login-required')
 def login_required():

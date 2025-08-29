@@ -1269,14 +1269,14 @@ function dismissNotificationBanner() {
     localStorage.setItem('notification_banner_dismissed', 'true');
 }
 
-// Firebase configuration
+// Firebase configuration from environment
 const firebaseConfig = {
-    apiKey: "AIzaSyDummy_Replace_With_Your_Key",
+    apiKey: "{{ firebase_api_key }}",
     authDomain: "roxli-mail.firebaseapp.com",
     projectId: "roxli-mail",
     storageBucket: "roxli-mail.appspot.com",
     messagingSenderId: "539072741497",
-    appId: "1:539072741497:web:dummy_replace_with_your_id"
+    appId: "{{ firebase_app_id }}"
 };
 
 let messaging = null;
@@ -1297,6 +1297,14 @@ function initializeNotifications() {
             .then((registration) => {
                 console.log('Service Worker registered:', registration);
                 messaging.useServiceWorker(registration);
+                
+                // Send Firebase config to service worker
+                if (registration.active) {
+                    registration.active.postMessage({
+                        type: 'FIREBASE_CONFIG',
+                        config: firebaseConfig
+                    });
+                }
                 
                 // Wait for service worker to be ready
                 return navigator.serviceWorker.ready;
@@ -1340,7 +1348,7 @@ function requestNotificationPermission() {
         if (permission === 'granted') {
             // Get FCM token
             messaging.getToken({ 
-                vapidKey: 'YOUR_VAPID_KEY_HERE'
+                vapidKey: '{{ vapid_key }}'
             })
             .then((currentToken) => {
                 if (currentToken) {

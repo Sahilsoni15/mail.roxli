@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compose - Roxli Mail</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/logo.png') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f5f5f7;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            body { background-color: #202124 !important; color: #e8eaed !important; }
+            .header { background-color: #2d2e30 !important; border-bottom: 1px solid #3c4043 !important; }
+            .compose-form { background-color: #2d2e30 !important; border: 1px solid #3c4043 !important; }
+            .compose-header { background-color: #2d2e30 !important; color: #e8eaed !important; border-bottom: 1px solid #3c4043 !important; }
+            .compose-field { border-bottom: 1px solid #3c4043 !important; }
+            .compose-field input, .compose-body textarea { background-color: #3c4043 !important; color: #e8eaed !important; border: 1px solid #5f6368 !important; }
+            .compose-field label { color: #9aa0a6 !important; }
+            .formatting-toolbar { background-color: #3c4043 !important; border-bottom: 1px solid #5f6368 !important; }
+            .format-btn:hover { background-color: #5f6368 !important; }
+            .compose-actions { background-color: #2d2e30 !important; border-top: 1px solid #3c4043 !important; }
+            .success-message { background-color: #1e4620 !important; color: #81c784 !important; }
+        }
+        
+        @media (prefers-color-scheme: light) {
+            body { background-color: #f5f5f7 !important; color: #1d1d1f !important; }
+            .header { background-color: white !important; border-bottom: 1px solid #e0e0e0 !important; }
+            .compose-form { background-color: white !important; border: 1px solid #d1d1d6 !important; }
+            .compose-header { background-color: white !important; color: #1d1d1f !important; }
+            .compose-field input, .compose-body textarea { background-color: white !important; color: #1d1d1f !important; border: 1px solid #d1d1d6 !important; }
+            .compose-field label { color: #5f6368 !important; }
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+        }
+
+        .back-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .logo {
+            height: 32px;
+        }
+
+        .compose-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .compose-form {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 800px;
+            height: fit-content;
+            border: 1px solid #d1d1d6;
+        }
+
+        .compose-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .compose-field {
+            display: flex;
+            align-items: center;
+            padding: 8px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .compose-field label {
+            width: 60px;
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        .compose-field input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 15px;
+            padding: 12px 0;
+            background: transparent;
+        }
+
+        .compose-body {
+            padding: 20px;
+        }
+
+        .compose-body textarea {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            resize: vertical;
+            min-height: 300px;
+            line-height: 1.5;
+            background: transparent;
+        }
+
+        .compose-actions {
+            padding: 16px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 12px;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #007AFF 0%, #0051D5 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 12px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .send-btn:hover {
+            background: linear-gradient(135deg, #0051D5 0%, #003D99 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+        }
+
+        .send-btn:disabled {
+            background: #dadce0;
+            cursor: not-allowed;
+        }
+
+        .draft-btn {
+            background: none;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .draft-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .success-message {
+            background: #e8f5e8;
+            color: #34a853;
+            padding: 12px 20px;
+            border-radius: 4px;
+            margin: 16px 20px;
+            display: none;
+        }
+
+        .attachment-area {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: none;
+        }
+        
+        .attachment-btn {
+            background: none;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+        
+        .formatting-toolbar {
+            padding: 8px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .format-btn {
+            background: none;
+            border: none;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .format-btn:hover {
+            background: #f8f9fa;
+        }
+        
+        @media (max-width: 768px) {
+            .compose-container {
+                padding: 5px;
+            }
+            
+            .compose-form {
+                border-radius: 0;
+                box-shadow: none;
+            }
+            
+            .compose-field {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px 16px;
+            }
+            
+            .compose-field label {
+                margin-bottom: 4px;
+                font-weight: 500;
+            }
+            
+            .compose-body {
+                padding: 16px;
+            }
+            
+            .compose-actions {
+                padding: 12px 16px;
+                flex-wrap: wrap;
+            }
+            
+            .formatting-toolbar {
+                flex-wrap: wrap;
+                padding: 8px 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header {
+                padding: 8px 12px;
+            }
+            
+            .compose-body textarea {
+                min-height: 200px;
+                font-size: 16px;
+            }
+            
+            .send-btn, .draft-btn {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <button class="back-btn" onclick="window.location.href='/'">←</button>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Roxli Mail" class="logo" onerror="this.style.display='none'">
+            <span>Compose</span>
+        </div>
+    </div>
+
+    <div class="compose-container">
+        <div class="compose-form">
+            <div class="compose-header">New Message</div>
+            
+            <div class="success-message" id="successMessage">
+                Email sent successfully!
+            </div>
+            
+            <form id="composeForm">
+                <div class="compose-field" style="position: relative;">
+                    <label>To</label>
+                    <input type="text" id="toField" placeholder="Recipients" required autocomplete="off">
+                    <div id="emailSuggestions" style="position: absolute; top: 100%; left: 60px; right: 0; background: white; border: 1px solid #dadce0; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; z-index: 1000; max-height: 200px; overflow-y: auto; color: #202124;"></div>
+                </div>
+                
+                <div class="compose-field">
+                    <label>Subject</label>
+                    <input type="text" id="subjectField" placeholder="Subject" required>
+                </div>
+                
+                <div class="formatting-toolbar">
+                    <button type="button" class="format-btn" onclick="formatText('bold')" title="Bold"><b>B</b></button>
+                    <button type="button" class="format-btn" onclick="formatText('italic')" title="Italic"><i>I</i></button>
+                    <button type="button" class="format-btn" onclick="formatText('underline')" title="Underline"><u>U</u></button>
+                    <button type="button" class="attachment-btn" onclick="toggleAttachments()">📎 Attach</button>
+                </div>
+                
+                <div class="attachment-area" id="attachmentArea">
+                    <input type="file" id="fileInput" multiple style="display: none;">
+                    <button type="button" class="attachment-btn" onclick="document.getElementById('fileInput').click()">Choose Files</button>
+                    <div id="attachmentList"></div>
+                </div>
+                
+
+                <div class="compose-body">
+                    <textarea id="bodyField" placeholder="Compose email"></textarea>
+                </div>
+                
+                <div class="compose-actions">
+                    <button type="submit" class="send-btn" id="sendBtn">Send</button>
+                    <button type="button" class="draft-btn">Save Draft</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let attachments = [];
+        
+        function formatText(command) {
+            const textarea = document.getElementById('bodyField');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            
+            if (selectedText) {
+                let formattedText = selectedText;
+                switch(command) {
+                    case 'bold':
+                        formattedText = `**${selectedText}**`;
+                        break;
+                    case 'italic':
+                        formattedText = `*${selectedText}*`;
+                        break;
+                    case 'underline':
+                        formattedText = `_${selectedText}_`;
+                        break;
+                }
+                
+                textarea.value = textarea.value.substring(0, start) + formattedText + textarea.value.substring(end);
+                textarea.focus();
+            }
+        }
+        
+        function toggleAttachments() {
+            const area = document.getElementById('attachmentArea');
+            area.style.display = area.style.display === 'block' ? 'none' : 'block';
+        }
+        
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            attachments = attachments.concat(files);
+            updateAttachmentList();
+        });
+        
+        function updateAttachmentList() {
+            const list = document.getElementById('attachmentList');
+            list.innerHTML = attachments.map((file, index) => `
+                <div style="margin: 8px 0; padding: 8px; background: #f8f9fa; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>${file.name} (${(file.size / 1024).toFixed(1)} KB)</span>
+                    <button type="button" onclick="removeAttachment(${index})" style="background: none; border: none; color: #d93025; cursor: pointer;">×</button>
+                </div>
+            `).join('');
+        }
+        
+        function removeAttachment(index) {
+            attachments.splice(index, 1);
+            updateAttachmentList();
+        }
+        
+        // Auto-save draft every 30 seconds
+        let draftTimer;
+        function startDraftTimer() {
+            clearTimeout(draftTimer);
+            draftTimer = setTimeout(saveDraft, 30000);
+        }
+        
+        function saveDraft() {
+            const formData = {
+                to: document.getElementById('toField').value,
+                subject: document.getElementById('subjectField').value,
+                body: document.getElementById('bodyField').value
+            };
+            
+            if (formData.to || formData.subject || formData.body) {
+                localStorage.setItem('roxli_mail_draft', JSON.stringify(formData));
+                showNotification('Draft saved');
+            }
+        }
+        
+        // Load draft on page load
+        window.addEventListener('load', function() {
+            const draft = localStorage.getItem('roxli_mail_draft');
+            if (draft) {
+                const data = JSON.parse(draft);
+                document.getElementById('toField').value = data.to || '';
+                document.getElementById('subjectField').value = data.subject || '';
+                document.getElementById('bodyField').value = data.body || '';
+            }
+        });
+        
+        // Start draft timer on input
+        ['toField', 'subjectField', 'bodyField'].forEach(id => {
+            document.getElementById(id).addEventListener('input', startDraftTimer);
+        });
+        
+        function showNotification(message, type = 'success') {
+            // Simple notification for compose page
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; right: 20px; z-index: 1000;
+                background: ${type === 'error' ? '#ea4335' : '#34a853'};
+                color: white; padding: 12px 20px; border-radius: 4px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
+        }
+        
+        document.getElementById('composeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const sendBtn = document.getElementById('sendBtn');
+            const originalText = sendBtn.textContent;
+            
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+            
+            const formData = {
+                to: document.getElementById('toField').value,
+                subject: document.getElementById('subjectField').value,
+                body: document.getElementById('bodyField').value
+            };
+            
+            try {
+                const response = await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Save recipient for future suggestions
+                    saveEmailRecipient(formData.to);
+                    
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('composeForm').reset();
+                    localStorage.removeItem('roxli_mail_draft');
+                    attachments = [];
+                    updateAttachmentList();
+                    
+                    // Browser notification
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('Roxli Mail', {
+                            body: 'Email sent successfully!',
+                            icon: '/static/images/logo.png'
+                        });
+                    }
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    alert('Error sending email: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error sending email. Please try again.');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = originalText;
+            }
+        });
+    
+    // Auto system theme detection
+    function setTheme() {
+        const savedTheme = localStorage.getItem('roxli_mail_theme');
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        const theme = savedTheme || systemTheme;
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        // Force apply theme styles
+        const isDark = theme === 'dark';
+        
+        // Apply to body
+        document.body.style.backgroundColor = isDark ? '#202124' : '#f5f5f7';
+        document.body.style.color = isDark ? '#e8eaed' : '#1d1d1f';
+        
+        // Apply to compose form elements
+        const composeForm = document.querySelector('.compose-form');
+        if (composeForm) {
+            composeForm.style.backgroundColor = isDark ? '#2d2e30' : 'white';
+            composeForm.style.border = isDark ? '1px solid #3c4043' : '1px solid #d1d1d6';
+        }
+        
+        // Apply to inputs and textarea
+        document.querySelectorAll('.compose-field input, .compose-body textarea').forEach(el => {
+            el.style.backgroundColor = isDark ? '#3c4043' : 'white';
+            el.style.color = isDark ? '#e8eaed' : '#1d1d1f';
+            el.style.border = isDark ? '1px solid #5f6368' : '1px solid #d1d1d6';
+        });
+        
+        // Apply to header
+        const header = document.querySelector('.header');
+        if (header) {
+            header.style.backgroundColor = isDark ? '#2d2e30' : 'white';
+            header.style.borderBottom = isDark ? '1px solid #3c4043' : '1px solid #e0e0e0';
+        }
+    }
+    
+    // Set theme on load
+    setTheme();
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setTheme);
+    
+    // Apply theme when DOM is ready
+    document.addEventListener('DOMContentLoaded', setTheme);
+    
+    // Email auto-completion
+    let emailSuggestions = [];
+    
+    // Load previous email recipients
+    function loadEmailSuggestions() {
+        const stored = localStorage.getItem('roxli_email_recipients');
+        if (stored) {
+            emailSuggestions = JSON.parse(stored);
+        }
+    }
+    
+    // Save email recipient
+    function saveEmailRecipient(email) {
+        if (email && email.includes('@')) {
+            const stored = JSON.parse(localStorage.getItem('roxli_email_recipients') || '[]');
+            if (!stored.includes(email)) {
+                stored.unshift(email);
+                // Keep only last 20 recipients
+                if (stored.length > 20) stored.splice(20);
+                localStorage.setItem('roxli_email_recipients', JSON.stringify(stored));
+                emailSuggestions = stored;
+            }
+        }
+    }
+    
+    // Setup email field with auto-completion
+    document.addEventListener('DOMContentLoaded', function() {
+        loadEmailSuggestions();
+        
+        const toField = document.getElementById('toField');
+        const suggestions = document.getElementById('emailSuggestions');
+        
+        toField.addEventListener('input', function(e) {
+            let value = e.target.value;
+            
+            // Auto-add @roxli.in if user types just username
+            if (value && !value.includes('@') && !value.endsWith('@roxli.in')) {
+                // Don't auto-complete while typing
+                if (value.length > 2 && !value.includes(' ')) {
+                    // Show suggestion but don't auto-complete yet
+                    showEmailSuggestions(value);
+                }
+            } else if (value.includes('@') && !value.endsWith('@roxli.in')) {
+                showEmailSuggestions(value);
+            } else {
+                hideSuggestions();
+            }
+        });
+        
+        toField.addEventListener('blur', function(e) {
+            // Auto-complete @roxli.in if user didn't specify domain
+            setTimeout(() => {
+                let value = e.target.value.trim();
+                if (value && !value.includes('@')) {
+                    e.target.value = value + '@roxli.in';
+                }
+                hideSuggestions();
+            }, 200);
+        });
+        
+        toField.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab' || e.key === 'Enter') {
+                let value = e.target.value.trim();
+                if (value && !value.includes('@')) {
+                    e.target.value = value + '@roxli.in';
+                    hideSuggestions();
+                }
+            }
+        });
+    });
+    
+    function showEmailSuggestions(input) {
+        const suggestions = document.getElementById('emailSuggestions');
+        if (!suggestions) return;
+        
+        let matches = [];
+        
+        // Add @roxli.in suggestion if typing username
+        if (input && !input.includes('@')) {
+            matches.push(input + '@roxli.in');
+        }
+        
+        // Add previous recipients that match
+        const filtered = emailSuggestions.filter(email => 
+            email.toLowerCase().includes(input.toLowerCase()) && 
+            email !== input + '@roxli.in'
+        );
+        matches = matches.concat(filtered.slice(0, 5));
+        
+        if (matches.length > 0) {
+            suggestions.innerHTML = matches.map(email => 
+                `<div onclick="selectSuggestion('${email}')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #202124; background: white;" onmouseover="this.style.background='#f8f9fa'; this.style.color='#202124';" onmouseout="this.style.background='white'; this.style.color='#202124';">${email}</div>`
+            ).join('');
+            suggestions.style.display = 'block';
+        } else {
+            hideSuggestions();
+        }
+    }
+    
+    function selectSuggestion(email) {
+        document.getElementById('toField').value = email;
+        hideSuggestions();
+    }
+    
+    function hideSuggestions() {
+        const suggestions = document.getElementById('emailSuggestions');
+        if (suggestions) {
+            suggestions.style.display = 'none';
+        }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - Roxli Mail</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/logo.png') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 48px 40px 36px;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo {
+            height: 40px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 8px;
+            color: #202124;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #5f6368;
+            margin-bottom: 32px;
+        }
+        
+        /* Dark theme text visibility */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #202124 !important;
+                color: #e8eaed !important;
+            }
+            
+            .login-container {
+                background: #2d2e30 !important;
+                color: #e8eaed !important;
+                border: 1px solid #3c4043;
+            }
+            
+            h1 {
+                color: #e8eaed !important;
+            }
+            
+            .subtitle {
+                color: #9aa0a6 !important;
+            }
+            
+            .help-text {
+                color: #9aa0a6 !important;
+            }
+            
+            .help-text a {
+                color: #8ab4f8 !important;
+            }
+        }
+
+        .sign-in-btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+
+        .sign-in-btn:hover {
+            background: #1669c1;
+        }
+
+        .help-text {
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        .help-text a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Roxli Mail" class="logo" onerror="this.style.display='none'">
+        <h1>Sign in to Roxli Mail</h1>
+        <p class="subtitle">Use your Roxli Account</p>
+        
+        <button class="sign-in-btn" onclick="openRoxliAuth()">Sign in with Roxli</button>
+        
+        <p class="help-text">
+            Don't have a Roxli account? <a href="#" onclick="openRoxliAuth('register')">Create one</a>
+        </p>
+    </div>
+
+    <script>
+        function openRoxliAuth(mode = 'login') {
+            const url = mode === 'register' ? 
+                'https://auth.roxli.in/popup?mode=register' : 
+                'https://auth.roxli.in/popup';
+            
+            const popup = window.open(url, 'roxli-auth', 'width=400,height=600,scrollbars=yes,resizable=yes');
+            
+            const messageHandler = function(event) {
+                if (event.origin !== 'https://auth.roxli.in') return;
+                
+                if (event.data.type === 'ROXLI_AUTH_SUCCESS') {
+                    popup.close();
+                    window.removeEventListener('message', messageHandler);
+                    
+                    // Set token in Roxli Mail
+                    fetch('/api/set-token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: event.data.token })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = '/';
+                        } else {
+                            alert('Authentication failed. Please try again.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Auth error:', error);
+                        alert('Authentication failed. Please try again.');
+                    });
+                }
+            };
+            
+            window.addEventListener('message', messageHandler);
+        }
+    
+    // Auto system theme detection
+    function setTheme() {
+        const savedTheme = localStorage.getItem('roxli_mail_theme');
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        const theme = savedTheme || systemTheme;
+        
+        if (theme === 'dark') {
+            document.body.style.background = '#202124';
+            document.body.style.color = '#e8eaed';
+            const container = document.querySelector('.login-container');
+            container.style.background = '#2d2e30';
+            container.style.color = '#e8eaed';
+            container.style.border = '1px solid #3c4043';
+            
+            const h1 = document.querySelector('h1');
+            if (h1) h1.style.color = '#e8eaed';
+            
+            const subtitle = document.querySelector('.subtitle');
+            if (subtitle) subtitle.style.color = '#9aa0a6';
+            
+            const helpText = document.querySelector('.help-text');
+            if (helpText) helpText.style.color = '#9aa0a6';
+            
+            const helpLink = document.querySelector('.help-text a');
+            if (helpLink) helpLink.style.color = '#8ab4f8';
+        } else {
+            document.body.style.background = '#f8f9fa';
+            document.body.style.color = '#202124';
+            const container = document.querySelector('.login-container');
+            container.style.background = 'white';
+            container.style.color = '#202124';
+            container.style.border = 'none';
+            
+            const h1 = document.querySelector('h1');
+            if (h1) h1.style.color = '#202124';
+            
+            const subtitle = document.querySelector('.subtitle');
+            if (subtitle) subtitle.style.color = '#5f6368';
+            
+            const helpText = document.querySelector('.help-text');
+            if (helpText) helpText.style.color = '#5f6368';
+            
+            const helpLink = document.querySelector('.help-text a');
+            if (helpLink) helpLink.style.color = '#1a73e8';
+        }
+    }
+    
+    // Set theme on load
+    setTheme();
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setTheme);
+    </script>
+</body>
+</html>

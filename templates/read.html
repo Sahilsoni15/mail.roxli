@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#2196F3">
+<title>Read Email - Roxli Mail</title>
+<link rel="icon" type="image/png" href="/static/images/logo.png">
+<link rel="shortcut icon" href="/static/images/logo.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    :root { --accent: #1a73e8; }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #ffffff;
+        color: #000000;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        body { background-color: #202124 !important; color: #e8eaed !important; }
+        .top-bar { background-color: #2d2e30 !important; border-bottom: 1px solid #3c4043 !important; }
+        .email-header { background-color: #2d2e30 !important; color: #e8eaed !important; }
+        .email-content { background-color: #2d2e30 !important; color: #e8eaed !important; }
+        .email-content * { color: #e8eaed !important; }
+        .email-content p, .email-content div, .email-content span { color: #e8eaed !important; }
+        .reply-form { background-color: #2d2e30 !important; border-top: 1px solid #3c4043 !important; }
+        .reply-textarea { background-color: #3c4043 !important; color: #e8eaed !important; border: 1px solid #5f6368 !important; }
+        .email-subject { color: #e8eaed !important; }
+        .sender-details h3 { color: #e8eaed !important; }
+        .sender-details p, .email-meta { color: #9aa0a6 !important; }
+    }
+    
+    @media (prefers-color-scheme: light) {
+        body { background-color: #ffffff !important; color: #000000 !important; }
+        .top-bar { background-color: white !important; border-bottom: 1px solid rgba(128,128,128,0.2) !important; }
+        .email-header { background-color: white !important; color: #000000 !important; }
+        .email-content { background-color: white !important; color: #000000 !important; }
+        .reply-form { background-color: white !important; }
+        .reply-textarea { background-color: white !important; color: #000000 !important; border: 1px solid #dadce0 !important; }
+    }
+
+    .top-bar {
+        height: 50px;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        border-bottom: 1px solid rgba(128,128,128,0.2);
+        background: inherit;
+    }
+
+    .back-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        color: var(--accent);
+        margin-right: 15px;
+        padding: 8px;
+        border-radius: 50%;
+    }
+
+    .back-btn:hover {
+        background: rgba(26, 115, 232, 0.1);
+    }
+
+    .email-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .email-header {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .sender-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .sender-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 20px;
+        text-transform: uppercase;
+    }
+
+    .sender-details h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .sender-details p {
+        margin: 2px 0 0 0;
+        font-size: 14px;
+        color: #5f6368;
+    }
+
+    .email-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        color: #5f6368;
+        margin-bottom: 15px;
+    }
+
+    .email-subject {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+        color: #202124;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .email-subject { color: #e8eaed; }
+        .sender-details h3 { color: #e8eaed; }
+        .sender-details p, .email-meta { color: #9aa0a6; }
+    }
+
+    .email-content {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    .email-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .action-btn {
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .action-btn:hover {
+        background: #1669c1;
+    }
+
+    .action-btn.secondary {
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+    }
+
+    .action-btn.secondary:hover {
+        background: rgba(26, 115, 232, 0.1);
+    }
+
+    .reply-form {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: none;
+    }
+
+    .reply-form.show {
+        display: block;
+    }
+
+    .reply-textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 12px;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 14px;
+        resize: vertical;
+        box-sizing: border-box;
+    }
+
+    .reply-actions {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .email-container {
+            padding: 10px;
+        }
+        
+        .sender-info {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .email-meta {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+        
+        .email-actions {
+            flex-wrap: wrap;
+        }
+    }
+</style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <button class="back-btn" onclick="goBack()" title="Back to Inbox">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <span>Email</span>
+    </div>
+
+    <div class="email-container">
+        <div class="email-header">
+            <div class="sender-info">
+                <div class="sender-avatar" id="senderAvatar" style="background-color: #667eea;">
+                    <!-- Avatar will be set by JS -->
+                </div>
+                <div class="sender-details">
+                    <h3 id="senderName">Loading...</h3>
+                    <p id="senderEmail">Loading...</p>
+                </div>
+            </div>
+            <div class="email-meta">
+                <span id="emailDate">Loading...</span>
+                <span id="emailTime">Loading...</span>
+            </div>
+            <h1 class="email-subject" id="emailSubject">Loading...</h1>
+        </div>
+
+        <div class="email-content" id="emailBody">
+            Loading email content...
+        </div>
+
+        <div class="email-actions">
+            <button class="action-btn" onclick="toggleReply()">
+                <i class="fa-solid fa-reply"></i> Reply
+            </button>
+            <button class="action-btn secondary" onclick="toggleStar()">
+                <i class="fa-solid fa-star" id="starIcon"></i> <span id="starText">Star</span>
+            </button>
+            <button class="action-btn secondary" onclick="deleteEmail()">
+                <i class="fa-solid fa-trash"></i> Delete
+            </button>
+        </div>
+
+        <div class="reply-form" id="replyForm">
+            <h3>Reply to <span id="replyToName"></span></h3>
+            <textarea class="reply-textarea" id="replyText" placeholder="Type your reply..."></textarea>
+            <div class="reply-actions">
+                <button class="action-btn" onclick="sendReply()">
+                    <i class="fa-solid fa-paper-plane"></i> Send Reply
+                </button>
+                <button class="action-btn secondary" onclick="cancelReply()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// Get email ID from URL
+const urlParams = new URLSearchParams(window.location.search);
+const emailId = window.location.pathname.split('/').pop();
+
+let currentEmail = null;
+
+// Auto system theme detection
+function setTheme() {
+    const savedTheme = localStorage.getItem('roxli_mail_theme');
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const theme = savedTheme || systemTheme;
+    document.documentElement.setAttribute('data-theme', theme);
+    
+    // Force apply theme styles
+    const isDark = theme === 'dark';
+    
+    // Apply to body
+    document.body.style.backgroundColor = isDark ? '#202124' : '#ffffff';
+    document.body.style.color = isDark ? '#e8eaed' : '#000000';
+    
+    // Apply to top bar
+    const topBar = document.querySelector('.top-bar');
+    if (topBar) {
+        topBar.style.backgroundColor = isDark ? '#2d2e30' : 'white';
+        topBar.style.borderBottom = isDark ? '1px solid #3c4043' : '1px solid rgba(128,128,128,0.2)';
+    }
+    
+    // Apply to email elements
+    document.querySelectorAll('.email-header, .email-content, .reply-form').forEach(el => {
+        el.style.backgroundColor = isDark ? '#2d2e30' : 'white';
+        el.style.color = isDark ? '#e8eaed' : '#000000';
+    });
+    
+    // Force text color for all text elements in dark mode
+    if (isDark) {
+        document.querySelectorAll('.email-content *').forEach(el => {
+            if (el.tagName !== 'A') {
+                el.style.color = '#e8eaed';
+            }
+        });
+    } else {
+        document.querySelectorAll('.email-content *').forEach(el => {
+            if (el.tagName !== 'A') {
+                el.style.color = '#000000';
+            }
+        });
+    }
+    
+    // Apply to textarea
+    const textarea = document.querySelector('.reply-textarea');
+    if (textarea) {
+        textarea.style.backgroundColor = isDark ? '#3c4043' : 'white';
+        textarea.style.color = isDark ? '#e8eaed' : '#000000';
+        textarea.style.border = isDark ? '1px solid #5f6368' : '1px solid #dadce0';
+    }
+    
+    // Apply to text elements
+    const emailSubject = document.querySelector('.email-subject');
+    if (emailSubject) {
+        emailSubject.style.color = isDark ? '#e8eaed' : '#202124';
+    }
+    
+    document.querySelectorAll('.sender-details h3').forEach(el => {
+        el.style.color = isDark ? '#e8eaed' : '#000000';
+    });
+    
+    document.querySelectorAll('.sender-details p, .email-meta').forEach(el => {
+        el.style.color = isDark ? '#9aa0a6' : '#5f6368';
+    });
+}
+
+setTheme();
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setTheme);
+
+// Apply theme when DOM is ready
+document.addEventListener('DOMContentLoaded', setTheme);
+
+// Load email content
+function loadEmail() {
+    console.log('Loading email with ID:', emailId);
+    
+    fetch(`/api/email/${emailId}`)
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success && data.email) {
+                currentEmail = data.email;
+                displayEmail(currentEmail);
+            } else {
+                showError(data.error || 'Email not found');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading email:', error);
+            showError('Error loading email: ' + error.message);
+        });
+}
+
+function displayEmail(email) {
+    // Set sender info
+    document.getElementById('senderName').textContent = email.senderName || email.from || 'Unknown';
+    document.getElementById('senderEmail').textContent = email.from || 'unknown@email.com';
+    
+    // Set avatar
+    const avatar = document.getElementById('senderAvatar');
+    if (email.senderAvatar) {
+        avatar.innerHTML = `<img src="${email.senderAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+    } else {
+        const initials = (email.senderName || email.from || 'U')[0].toUpperCase();
+        avatar.textContent = initials;
+    }
+    
+    // Set email details
+    document.getElementById('emailSubject').textContent = email.subject || '(No subject)';
+    document.getElementById('emailBody').innerHTML = email.body || email.message || 'No content';
+    document.getElementById('emailDate').textContent = email.date || '';
+    document.getElementById('emailTime').textContent = email.time || '';
+    
+    // Set star status
+    updateStarButton(email.starred);
+    
+    // Set reply form
+    document.getElementById('replyToName').textContent = email.senderName || email.from || 'sender';
+}
+
+function updateStarButton(starred) {
+    const starIcon = document.getElementById('starIcon');
+    const starText = document.getElementById('starText');
+    
+    if (starred) {
+        starIcon.className = 'fa-solid fa-star';
+        starText.textContent = 'Unstar';
+    } else {
+        starIcon.className = 'fa-regular fa-star';
+        starText.textContent = 'Star';
+    }
+}
+
+function toggleStar() {
+    if (!currentEmail) return;
+    
+    const newStarred = !currentEmail.starred;
+    
+    fetch('/api/star-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailId: currentEmail.id, starred: newStarred })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentEmail.starred = newStarred;
+            updateStarButton(newStarred);
+            showNotification(newStarred ? 'Email starred' : 'Email unstarred');
+        }
+    });
+}
+
+function deleteEmail() {
+    if (!currentEmail) return;
+    
+    if (!confirm('Delete this email?')) return;
+    
+    fetch('/api/delete-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailIds: [currentEmail.id] })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Email deleted');
+            setTimeout(() => goBack(), 1000);
+        }
+    });
+}
+
+function toggleReply() {
+    const replyForm = document.getElementById('replyForm');
+    replyForm.classList.toggle('show');
+    
+    if (replyForm.classList.contains('show')) {
+        document.getElementById('replyText').focus();
+    }
+}
+
+function cancelReply() {
+    document.getElementById('replyForm').classList.remove('show');
+    document.getElementById('replyText').value = '';
+}
+
+function sendReply() {
+    const replyText = document.getElementById('replyText').value.trim();
+    
+    if (!replyText) {
+        showNotification('Please enter a reply message', 'error');
+        return;
+    }
+    
+    if (!currentEmail) return;
+    
+    const replyData = {
+        to: currentEmail.from,
+        subject: `Re: ${currentEmail.subject || '(No subject)'}`,
+        body: replyText,
+        message: replyText
+    };
+    
+    console.log('Sending reply:', replyData);
+    
+    fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(replyData)
+    })
+    .then(response => {
+        console.log('Reply response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Reply response data:', data);
+        if (data.success) {
+            showNotification('Reply sent successfully!');
+            cancelReply();
+        } else {
+            showNotification(data.error || 'Failed to send reply', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Reply error:', error);
+        showNotification('Error sending reply', 'error');
+    });
+}
+
+function goBack() {
+    // Check if there's history to go back to
+    if (document.referrer && document.referrer.includes('/')) {
+        window.history.back();
+    } else {
+        // Fallback to inbox
+        window.location.href = '/';
+    }
+}
+
+function showError(message) {
+    document.getElementById('emailSubject').textContent = 'Error';
+    document.getElementById('emailBody').textContent = message;
+    document.getElementById('senderName').textContent = 'Error';
+    document.getElementById('senderEmail').textContent = '';
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed; top: 60px; right: 20px; z-index: 1000;
+        background: ${type === 'error' ? '#ea4335' : '#34a853'};
+        color: white; padding: 12px 20px; border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            document.body.removeChild(notification);
+        }
+    }, 3000);
+}
+
+// Load email on page load
+document.addEventListener('DOMContentLoaded', loadEmail);
+</script>
+
+</body>
+</html>

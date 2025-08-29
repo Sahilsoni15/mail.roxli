@@ -378,9 +378,11 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 12px 16px;
+        padding: 10px 16px;
         cursor: pointer;
         border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s ease;
+        min-height: 56px;
     }
     
     .account-item:hover {
@@ -389,6 +391,29 @@
     
     .account-item:last-child {
         border-bottom: none;
+    }
+    
+    #savedAccountsList {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    #savedAccountsList::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #savedAccountsList::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    #savedAccountsList::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+    
+    #savedAccountsList::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
     }
     
     .account-avatar {
@@ -1240,6 +1265,8 @@ function requestBrowserNotificationPermission() {
 
 async function loadSavedAccounts() {
     try {
+        // Get saved accounts from localStorage (from auth popup)
+        const savedAccounts = JSON.parse(localStorage.getItem('roxli_accounts') || '[]');
         const loggedInEmails = JSON.parse(localStorage.getItem('roxli_logged_accounts') || '[]');
         const currentEmail = '{{ user.email }}';
         
@@ -1254,26 +1281,52 @@ async function loadSavedAccounts() {
         
         accountsList.innerHTML = '';
         
-        // Show all logged accounts except current
-        const otherEmails = loggedInEmails.filter(email => email !== currentEmail);
+        // Combine saved accounts with logged emails
+        const allAccounts = new Map();
         
-        if (otherEmails.length > 0) {
-            // Create accounts from stored emails
-            otherEmails.forEach(email => {
+        // Add saved accounts (with full user data)
+        savedAccounts.forEach(account => {
+            if (account.email !== currentEmail) {
+                allAccounts.set(account.email, account);
+            }
+        });
+        
+        // Add logged emails that might not be in saved accounts
+        loggedInEmails.forEach(email => {
+            if (email !== currentEmail && !allAccounts.has(email)) {
                 const nameParts = email.split('@')[0].split('.');
                 const firstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : 'User';
                 const lastName = nameParts[1] ? nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1) : '';
                 
+                allAccounts.set(email, {
+                    email: email,
+                    firstName: firstName,
+                    lastName: lastName,
+                    avatar: `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=667eea&color=fff&size=32&bold=true`
+                });
+            }
+        });
+        
+        // Display all accounts
+        if (allAccounts.size > 0) {
+            // Set max height for scrolling if more than 4 accounts
+            if (allAccounts.size > 4) {
+                accountsList.style.maxHeight = '280px';
+                accountsList.style.overflowY = 'auto';
+                accountsList.style.scrollbarWidth = 'thin';
+            }
+            
+            allAccounts.forEach(account => {
                 const accountItem = document.createElement('div');
                 accountItem.className = 'account-item';
-                accountItem.onclick = () => switchToAccount(email);
+                accountItem.onclick = () => switchToAccount(account.email);
                 accountItem.innerHTML = `
-                    <div class="account-avatar-wrapper" style="width: 32px; height: 32px;">
-                        <img src="https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=667eea&color=fff&size=32" alt="${firstName}" class="account-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                    <div class="account-avatar-wrapper" style="width: 32px; height: 32px; flex-shrink: 0;">
+                        <img src="${account.avatar}" alt="${account.firstName}" class="account-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
                     </div>
-                    <div class="account-info">
-                        <div class="account-name">${firstName} ${lastName}</div>
-                        <div class="account-email">${email}</div>
+                    <div class="account-info" style="flex: 1; min-width: 0;">
+                        <div class="account-name" style="font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${account.firstName} ${account.lastName}</div>
+                        <div class="account-email" style="font-size: 12px; color: #5f6368; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${account.email}</div>
                     </div>
                 `;
                 accountsList.appendChild(accountItem);
@@ -1303,12 +1356,22 @@ function addNewAccount() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Save account to logged accounts list
+                    // Save account to both logged accounts and saved accounts
                     const loggedAccounts = JSON.parse(localStorage.getItem('roxli_logged_accounts') || '[]');
-                    if (!loggedAccounts.includes(data.user.email)) {
-                        loggedAccounts.push(data.user.email);
+                    if (!loggedAccounts.includes(event.data.user.email)) {
+                        loggedAccounts.push(event.data.user.email);
                         localStorage.setItem('roxli_logged_accounts', JSON.stringify(loggedAccounts));
                     }
+                    
+                    // Also save to roxli_accounts for consistency
+                    const savedAccounts = JSON.parse(localStorage.getItem('roxli_accounts') || '[]');
+                    const existingIndex = savedAccounts.findIndex(acc => acc.email === event.data.user.email);
+                    if (existingIndex === -1) {
+                        savedAccounts.push(event.data.user);
+                    } else {
+                        savedAccounts[existingIndex] = event.data.user;
+                    }
+                    localStorage.setItem('roxli_accounts', JSON.stringify(savedAccounts));
                     
                     window.location.reload();
                 }

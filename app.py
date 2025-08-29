@@ -91,6 +91,20 @@ def verify_token(token):
     except Exception:
         return None
 
+def clean_merge_conflicts(text):
+    """Remove Git merge conflict markers from text"""
+    if not text:
+        return text
+    
+    import re
+    # Remove merge conflict markers and content between them
+    text = re.sub(r'<<<<<<< HEAD.*?=======.*?>>>>>>> [a-f0-9]+', '', text, flags=re.DOTALL)
+    text = re.sub(r'<<<<<<< HEAD.*?>>>>>>> [a-f0-9]+', '', text, flags=re.DOTALL)
+    text = re.sub(r'=======.*?>>>>>>> [a-f0-9]+', '', text, flags=re.DOTALL)
+    # Clean up extra whitespace
+    text = re.sub(r'\n\s*\n', '\n', text)
+    return text.strip()
+
 def get_current_user():
     """Get current user from token with session validation"""
     # Check session expiry
@@ -255,13 +269,17 @@ def get_emails():
             # Security check: ensure email belongs to current user
             if email_data.get('to') == user['email'] or email_data.get('from') == user['email']:
                 sender_name = email_data.get('senderName', email_data.get('from', '').split('@')[0])
+                # Clean merge conflicts from email data
+                clean_subject = clean_merge_conflicts(email_data.get('subject', ''))
+                clean_preview = clean_merge_conflicts(email_data.get('preview', ''))
+                
                 emails.append({
                     'id': email_id,
                     'from': email_data.get('from', ''),
                     'senderName': sender_name,
                     'senderAvatar': f'https://ui-avatars.com/api/?name={sender_name.replace(" ", "+")}&background=random&size=40',
-                    'subject': email_data.get('subject', ''),
-                    'preview': email_data.get('preview', ''),
+                    'subject': clean_subject,
+                    'preview': clean_preview,
                     'time': email_data.get('time', ''),
                     'date': email_data.get('date', ''),
                     'read': email_data.get('read', False),

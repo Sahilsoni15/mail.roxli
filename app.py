@@ -284,6 +284,9 @@ def send_email():
     current_hour = datetime.now().strftime('%Y%m%d%H')
     
     try:
+        if not mail_app:
+            return jsonify({'error': 'Mail service not available'}), 503
+        
         mail_db = db.reference('emails', app=mail_app)
         
         # Check rate limit

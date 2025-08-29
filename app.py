@@ -943,6 +943,42 @@ def send_notification_to_user(user_id, title, body, data=None):
         print(f"Error storing notification: {e}")
         return False
 
+@app.route('/api/cleanup-emails', methods=['POST'])
+def cleanup_emails():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        mail_db = db.reference('emails', app=mail_app)
+        user_emails = mail_db.child(user['id']).child('inbox').get() or {}
+        
+        cleaned_count = 0
+        for email_id, email_data in user_emails.items():
+            original_subject = email_data.get('subject', '')
+            original_preview = email_data.get('preview', '')
+            original_body = email_data.get('body', '')
+            
+            clean_subject = clean_merge_conflicts(original_subject)
+            clean_preview = clean_merge_conflicts(original_preview)
+            clean_body = clean_merge_conflicts(original_body)
+            
+            if (clean_subject != original_subject or 
+                clean_preview != original_preview or 
+                clean_body != original_body):
+                
+                mail_db.child(user['id']).child('inbox').child(email_id).update({
+                    'subject': clean_subject,
+                    'preview': clean_preview,
+                    'body': clean_body
+                })
+                cleaned_count += 1
+        
+        return jsonify({'success': True, 'cleaned': cleaned_count})
+    except Exception as e:
+        print(f"Error cleaning emails: {e}")
+        return jsonify({'error': 'Failed to clean emails'}), 500
+
 @app.route('/api/available-accounts')
 def get_available_accounts():
     user = get_current_user()

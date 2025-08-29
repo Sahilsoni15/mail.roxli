@@ -1093,6 +1093,7 @@ window.addEventListener('load', function() {
 
 document.addEventListener('DOMContentLoaded', function() {
     setupSearchListeners();
+    cleanupEmails();
     loadEmails();
     loadSavedAccounts();
     checkFirstTimeUser();
@@ -1100,6 +1101,23 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeNotifications();
     updateNotificationBadge();
 });
+
+// Clean up existing emails with merge conflicts
+function cleanupEmails() {
+    fetch('/api/cleanup-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.cleaned > 0) {
+            console.log(`Cleaned ${data.cleaned} emails`);
+        }
+    })
+    .catch(error => {
+        console.error('Error cleaning emails:', error);
+    });
+}
 
 // Check if we should show notification permission banner
 function checkNotificationPermission() {

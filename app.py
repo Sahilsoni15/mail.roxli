@@ -315,10 +315,18 @@ def send_email():
     if not user:
         return jsonify({'error': 'Not authenticated'}), 401
     
-    data = request.json
-    to = data.get('to', '').strip()
-    subject = data.get('subject', '').strip()
-    body = (data.get('body') or data.get('message', '')).strip()
+    # Handle both JSON and FormData
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        to = request.form.get('to', '').strip()
+        subject = request.form.get('subject', '').strip()
+        body = request.form.get('body', '').strip()
+        attachments = request.files.getlist('attachments')
+    else:
+        data = request.json or {}
+        to = data.get('to', '').strip()
+        subject = data.get('subject', '').strip()
+        body = (data.get('body') or data.get('message', '')).strip()
+        attachments = []
     
     # Input validation
     if not to:
@@ -360,6 +368,20 @@ def send_email():
         safe_body = html.escape(body)
         
         sender_name = f"{user['firstName']} {user['lastName']}"
+        # Handle attachments
+        attachment_data = []
+        if attachments:
+            for attachment in attachments:
+                if attachment.filename:
+                    # Store attachment info (in production, upload to cloud storage)
+                    attachment_info = {
+                        'filename': attachment.filename,
+                        'size': len(attachment.read()),
+                        'content_type': attachment.content_type
+                    }
+                    attachment.seek(0)  # Reset file pointer
+                    attachment_data.append(attachment_info)
+        
         email_data = {
             'id': email_id,
             'from': user['email'],
@@ -370,6 +392,7 @@ def send_email():
             'body': safe_body,
             'message': safe_body,
             'preview': (safe_body[:100] + '...') if len(safe_body) > 100 else safe_body,
+            'attachments': attachment_data,
             'timestamp': timestamp,
             'time': datetime.now().strftime('%I:%M %p'),
             'date': datetime.now().strftime('%Y-%m-%d'),

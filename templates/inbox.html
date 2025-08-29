@@ -1269,14 +1269,15 @@ function dismissNotificationBanner() {
     localStorage.setItem('notification_banner_dismissed', 'true');
 }
 
-// Firebase configuration
+// Firebase configuration - Updated with real config
 const firebaseConfig = {
-    apiKey: "AIzaSyDummy",
+    apiKey: "AIzaSyBvOiM5mIVfsOK6pyimzpmub0j_BjXnBo0",
     authDomain: "roxli-mail.firebaseapp.com",
     projectId: "roxli-mail",
     storageBucket: "roxli-mail.appspot.com",
     messagingSenderId: "539072741497",
-    appId: "1:539072741497:web:dummy"
+    appId: "1:539072741497:web:8f230f4d2fa8dc8c8b4a67",
+    measurementId: "G-XXXXXXXXXX"
 };
 
 let messaging = null;
@@ -1340,8 +1341,7 @@ function requestNotificationPermission() {
         if (permission === 'granted') {
             // Get FCM token
             messaging.getToken({ 
-                vapidKey: 'BP_mMwt0-nhtG6iqksNYPbKc_ynDDfrQCunZ7RkXS939_HoPZmNHw0Rxheqzni9-70HViFXvST2lVKY0JwBrk0E',
-                serviceWorkerRegistration: null // Let Firebase handle SW
+                vapidKey: 'BKnGsuuAaQffxQoyt01Va2rnyibyMcmSaf05hMoprZ_6sk7FuQjl0WvsCpjcp6p7AzSHjjwA4NCTBbdK-Za6SCU'
             })
             .then((currentToken) => {
                 if (currentToken) {

@@ -26,16 +26,15 @@ messaging.onBackgroundMessage((payload) => {
         icon: '/static/images/logo.png',
         badge: '/static/images/logo.png',
         tag: 'roxli-mail-' + (payload.data?.email_id || Date.now()),
-        requireInteraction: true,
+        requireInteraction: false,
+        silent: false,
+        vibrate: [200, 100, 200],
         data: payload.data || {},
         actions: [
             {
                 action: 'view',
-                title: 'View Email'
-            },
-            {
-                action: 'dismiss',
-                title: 'Dismiss'
+                title: 'View Email',
+                icon: '/static/images/logo.png'
             }
         ]
     };
@@ -92,7 +91,9 @@ self.addEventListener('push', (event) => {
                 icon: '/static/images/logo.png',
                 badge: '/static/images/logo.png',
                 tag: 'roxli-mail-push',
-                requireInteraction: true,
+                requireInteraction: false,
+                silent: false,
+                vibrate: [200, 100, 200],
                 data: payload.data || {}
             };
             

@@ -452,17 +452,20 @@
             sendBtn.disabled = true;
             sendBtn.textContent = 'Sending...';
             
-            const formData = {
-                to: document.getElementById('toField').value,
-                subject: document.getElementById('subjectField').value,
-                body: document.getElementById('bodyField').value
-            };
+            const formData = new FormData();
+            formData.append('to', document.getElementById('toField').value);
+            formData.append('subject', document.getElementById('subjectField').value);
+            formData.append('body', document.getElementById('bodyField').value);
+            
+            // Add attachments
+            attachments.forEach((file, index) => {
+                formData.append('attachments', file);
+            });
             
             try {
                 const response = await fetch('/api/send-email', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    body: formData
                 });
                 
                 const data = await response.json();

@@ -189,7 +189,7 @@
         border-radius: 8px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         min-width: 320px;
-        max-height: calc(100vh - 80px);
+        max-height: 500px;
         overflow-y: auto;
         display: none;
         z-index: 1001;
@@ -381,10 +381,6 @@
         padding: 12px 16px;
         cursor: pointer;
         border-bottom: 1px solid #f0f0f0;
-        min-height: 60px;
-        flex-shrink: 0;
-        width: 100%;
-        box-sizing: border-box;
     }
     
     .account-item:hover {
@@ -936,7 +932,14 @@ function logout() {
 let emails = [];
 
 function loadEmails() {
-    fetch('/api/emails')
+    // Clean emails first, then load
+    fetch('/api/cleanup-emails', { method: 'POST' })
+        .then(() => {
+            return fetch('/api/emails');
+        })
+        .catch(() => {
+            return fetch('/api/emails');
+        })
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -1097,10 +1100,8 @@ window.addEventListener('load', function() {
 
 document.addEventListener('DOMContentLoaded', function() {
     setupSearchListeners();
-    // Force cleanup of corrupted emails
-    fetch('/api/cleanup-emails', { method: 'POST' })
-        .then(() => loadEmails())
-        .catch(() => loadEmails());
+    cleanupEmails();
+    loadEmails();
     loadSavedAccounts();
     checkFirstTimeUser();
     checkNotificationPermission();

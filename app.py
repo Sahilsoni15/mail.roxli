@@ -204,6 +204,41 @@ def set_token():
     print("DEBUG: Token verification failed")
     return jsonify({'error': 'Invalid token'}), 401
 
+@app.route('/api/sent-emails')
+def get_sent_emails():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        if not mail_app:
+            return jsonify({'error': 'Mail service not available'}), 503
+        
+        mail_db = db.reference('emails', app=mail_app)
+        sent_emails = mail_db.child(user['id']).child('sent').get() or {}
+        
+        emails = []
+        for email_id, email_data in sent_emails.items():
+            if email_data.get('from') == user['email']:
+                recipient_name = email_data.get('to', '').split('@')[0]
+                emails.append({
+                    'id': email_id,
+                    'to': email_data.get('to', ''),
+                    'recipientName': recipient_name,
+                    'recipientAvatar': f'https://ui-avatars.com/api/?name={recipient_name.replace(" ", "+")}&background=random&size=40',
+                    'subject': email_data.get('subject', ''),
+                    'preview': email_data.get('preview', ''),
+                    'time': email_data.get('time', ''),
+                    'date': email_data.get('date', ''),
+                    'timestamp': email_data.get('timestamp', 0)
+                })
+        
+        emails.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
+        return jsonify({'emails': emails})
+    except Exception as e:
+        print(f"Error fetching sent emails: {e}")
+        return jsonify({'emails': []})
+
 @app.route('/api/emails')
 def get_emails():
     user = get_current_user()

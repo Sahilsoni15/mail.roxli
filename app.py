@@ -891,13 +891,43 @@ def send_fcm_notification(token, title, body, data=None):
             print("Firebase app not initialized")
             return False
         
+        # Ensure data values are strings
+        string_data = {}
+        if data:
+            for key, value in data.items():
+                string_data[key] = str(value) if value is not None else ''
+        
         message = messaging.Message(
             notification=messaging.Notification(
                 title=title,
                 body=body
             ),
-            data=data or {},
-            token=token
+            data=string_data,
+            token=token,
+            android=messaging.AndroidConfig(
+                priority='high',
+                notification=messaging.AndroidNotification(
+                    title=title,
+                    body=body,
+                    icon='logo',
+                    color='#1a73e8',
+                    sound='default',
+                    click_action='FLUTTER_NOTIFICATION_CLICK'
+                )
+            ),
+            webpush=messaging.WebpushConfig(
+                notification=messaging.WebpushNotification(
+                    title=title,
+                    body=body,
+                    icon='/static/images/logo.png',
+                    badge='/static/images/logo.png',
+                    tag='roxli-mail',
+                    require_interaction=True
+                ),
+                fcm_options=messaging.WebpushFCMOptions(
+                    link='https://mail.roxli.in'
+                )
+            )
         )
         
         response = messaging.send(message, app=mail_app)
@@ -906,6 +936,9 @@ def send_fcm_notification(token, title, body, data=None):
         
     except Exception as e:
         print(f"Error sending FCM notification: {e}")
+        # If token is invalid, return False to trigger cleanup
+        if 'not-registered' in str(e) or 'invalid-registration-token' in str(e):
+            return False
         return False
 
 def send_notification_to_user(user_id, title, body, data=None):
@@ -939,14 +972,18 @@ def send_notification_to_user(user_id, title, body, data=None):
                     notification_type = device_settings.get('type', 'browser')
                     
                     if notification_type == 'fcm':
-                        try:
-                            send_fcm_notification(token, title, body, data)
+                        success = send_fcm_notification(token, title, body, data)
+                        if success:
                             print(f"FCM notification sent to device {device_id} for user {user_id}")
                             notification_sent = True
-                        except Exception as e:
-                            print(f"Failed to send FCM to device {device_id}: {e}")
+                        else:
+                            print(f"Failed to send FCM to device {device_id}, removing invalid token")
                             # Remove invalid token
                             mail_db.child('user_devices').child(user_id).child(device_id).delete()
+                    elif notification_type == 'browser':
+                        # For browser notifications, we'll handle them client-side
+                        print(f"Browser notification queued for device {device_id}")
+                        notification_sent = True
             
             if not notification_sent:
                 print(f"No active devices found for user {user_id}")

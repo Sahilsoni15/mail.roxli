@@ -1374,8 +1374,29 @@ function addNewAccount() {
 }
 
 function switchToAccount(email) {
-    // Open auth popup for account switching instead of API call
-    const popup = window.open(`https://auth.roxli.in/popup?email=${encodeURIComponent(email)}`, 'roxli-auth', 'width=400,height=600,scrollbars=yes,resizable=yes');
+    // Try API switch first, fallback to popup if needed
+    fetch('/api/switch-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            // Fallback to popup if API switch fails
+            openAuthPopupForSwitch(email);
+        }
+    })
+    .catch(() => {
+        // Fallback to popup on error
+        openAuthPopupForSwitch(email);
+    });
+}
+
+function openAuthPopupForSwitch(email) {
+    const popup = window.open(`https://auth.roxli.in/popup?email=${encodeURIComponent(email)}`, 'roxli-auth', 'width=400,height=600');
     
     const messageHandler = function(event) {
         if (event.origin !== 'https://auth.roxli.in') return;
@@ -1384,18 +1405,12 @@ function switchToAccount(email) {
             popup.close();
             window.removeEventListener('message', messageHandler);
             
-            // Set new token without clearing existing accounts
             fetch('/api/set-token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: event.data.token })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.reload();
-                }
-            });
+            .then(() => window.location.reload());
         }
     };
     

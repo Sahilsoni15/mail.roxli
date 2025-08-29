@@ -571,7 +571,6 @@
         transition: all 0.3s ease;
     }
 
-<<<<<<< HEAD
 @media (max-width: 768px) {
         .email-section {
             padding: 2px;
@@ -626,9 +625,6 @@
             gap: 1px;
         }
     }
-
-=======
->>>>>>> 521f1f83f3e48ac2ffeb4700e78dceb7f1a476fc
 @media (max-width: 1024px) {
         .email-section {
             margin-left: 0;
@@ -957,18 +953,7 @@ function logout() {
 let emails = [];
 
 function loadEmails() {
-    // Force cleanup emails first, then load
-    fetch('/api/cleanup-emails', { method: 'POST' })
-        .then(response => response.json())
-        .then(cleanupData => {
-            if (cleanupData.cleaned > 0) {
-                console.log(`Cleaned ${cleanupData.cleaned} emails`);
-            }
-            return fetch('/api/emails');
-        })
-        .catch(() => {
-            return fetch('/api/emails');
-        })
+    fetch('/api/emails')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -1011,11 +996,7 @@ function renderEmails() {
                         <div class="email-time">${email.time || ''}</div>
                     </div>
                     <div class="email-subject">${email.subject || '(No subject)'}</div>
-<<<<<<< HEAD
-                    <div class="email-preview">${email.preview ? email.preview.split(' ').slice(0, 3).join(' ') + (email.preview.split(' ').length > 3 ? '...' : '') : ''}</div>
-=======
                     <div class="email-preview">${email.preview ? (email.preview.length > 50 ? email.preview.substring(0, 50) + '...' : email.preview) : ''}</div>
->>>>>>> 521f1f83f3e48ac2ffeb4700e78dceb7f1a476fc
                 </div>
             </div>
         `).join('');
@@ -1129,8 +1110,12 @@ window.addEventListener('load', function() {
 
 document.addEventListener('DOMContentLoaded', function() {
     setupSearchListeners();
-    cleanupEmails();
-    loadEmails();
+    
+    // Force cleanup then load emails
+    fetch('/api/cleanup-emails', { method: 'POST' })
+        .then(() => loadEmails())
+        .catch(() => loadEmails());
+    
     loadSavedAccounts();
     checkFirstTimeUser();
     checkNotificationPermission();
@@ -1389,22 +1374,32 @@ function addNewAccount() {
 }
 
 function switchToAccount(email) {
-    fetch('/api/switch-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            showNotification('Error switching account', 'error');
+    // Open auth popup for account switching instead of API call
+    const popup = window.open(`https://auth.roxli.in/popup?email=${encodeURIComponent(email)}`, 'roxli-auth', 'width=400,height=600,scrollbars=yes,resizable=yes');
+    
+    const messageHandler = function(event) {
+        if (event.origin !== 'https://auth.roxli.in') return;
+        
+        if (event.data.type === 'ROXLI_AUTH_SUCCESS') {
+            popup.close();
+            window.removeEventListener('message', messageHandler);
+            
+            // Set new token without clearing existing accounts
+            fetch('/api/set-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: event.data.token })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                }
+            });
         }
-    })
-    .catch(error => {
-        showNotification('Error switching account', 'error');
-    });
+    };
+    
+    window.addEventListener('message', messageHandler);
 }
 
 function openSwitchPopup(email) {

@@ -96,25 +96,18 @@ def clean_merge_conflicts(text):
     if not text:
         return text
     
-    lines = text.split('\n')
-    cleaned_lines = []
-    skip_mode = False
+    import re
+    # Remove all merge conflict patterns
+    text = re.sub(r'<<<<<<< HEAD.*?=======.*?>>>>>>> [a-f0-9]+', '', text, flags=re.DOTALL)
+    text = re.sub(r'<<<<<<< HEAD.*?=======', '', text, flags=re.DOTALL)
+    text = re.sub(r'=======.*?>>>>>>> [a-f0-9]+', '', text, flags=re.DOTALL)
+    text = re.sub(r'<<<<<<< HEAD', '', text)
+    text = re.sub(r'=======', '', text)
+    text = re.sub(r'>>>>>>> [a-f0-9]+', '', text)
     
-    for line in lines:
-        line = line.strip()
-        if line.startswith('<<<<<<< HEAD'):
-            skip_mode = True
-            continue
-        elif line.startswith('======='):
-            skip_mode = False
-            continue
-        elif line.startswith('>>>>>>> '):
-            continue
-        elif not skip_mode:
-            cleaned_lines.append(line)
-    
-    result = ' '.join(cleaned_lines).strip()
-    return result if result else text
+    # Clean up whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
 
 def get_current_user():
     """Get current user from token with session validation"""
@@ -953,25 +946,6 @@ def send_notification_to_user(user_id, title, body, data=None):
     except Exception as e:
         print(f"Error storing notification: {e}")
         return False
-
-@app.route('/api/reset-welcome-email', methods=['POST'])
-def reset_welcome_email():
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Not authenticated'}), 401
-    
-    try:
-        mail_db = db.reference('emails', app=mail_app)
-        # Delete all existing welcome emails
-        user_emails = mail_db.child(user['id']).child('inbox').get() or {}
-        for email_id, email_data in user_emails.items():
-            if email_data.get('from') == 'team@roxli.in':
-                mail_db.child(user['id']).child('inbox').child(email_id).delete()
-        
-        # Create fresh welcome email
-        return send_welcome_email()
-    except Exception as e:
-        return jsonify({'error': 'Failed to reset'}), 500
 
 @app.route('/api/cleanup-emails', methods=['POST'])
 def cleanup_emails():

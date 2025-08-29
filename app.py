@@ -46,7 +46,7 @@ def security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://auth.roxli.in https://account.roxli.in https://mail.roxli.in https://fcm.googleapis.com; object-src 'none'; base-uri 'self';"
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://auth.roxli.in https://account.roxli.in https://mail.roxli.in https://fcm.googleapis.com https://firebaseinstallations.googleapis.com; object-src 'none'; base-uri 'self';"
     response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', 'https://mail.roxli.in')
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
@@ -924,6 +924,35 @@ def send_notification_to_user(user_id, title, body, data=None):
     except Exception as e:
         print(f"Error storing notification: {e}")
         return False
+
+@app.route('/api/available-accounts')
+def get_available_accounts():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        emails = request.args.getlist('emails')
+        accounts = []
+        
+        for email in emails:
+            if email != user['email']:
+                # Mock account data - in real implementation, fetch from auth service
+                name_parts = email.split('@')[0].split('.')
+                first_name = name_parts[0].capitalize() if name_parts else 'User'
+                last_name = name_parts[1].capitalize() if len(name_parts) > 1 else ''
+                
+                accounts.append({
+                    'email': email,
+                    'firstName': first_name,
+                    'lastName': last_name,
+                    'avatar': None
+                })
+        
+        return jsonify({'accounts': accounts})
+    except Exception as e:
+        print(f"Error fetching available accounts: {e}")
+        return jsonify({'accounts': []})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5004))

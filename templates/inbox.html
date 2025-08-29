@@ -248,8 +248,10 @@
         flex-direction: column;
         margin-left: 0;
         transition: margin-left 0.3s ease;
-        padding: 10px;
+        padding: 5px;
         box-sizing: border-box;
+        max-width: 100vw;
+        overflow-x: hidden;
     }
 
     .compose-float-btn {
@@ -340,13 +342,15 @@
     }
 
     .email-item {
-        padding: 12px;
+        padding: 8px;
         border-bottom: 1px solid rgba(128,128,128,0.2);
         cursor: pointer;
         display: flex;
         align-items: flex-start;
-        gap: 12px;
+        gap: 8px;
         transition: background-color 0.2s ease;
+        max-width: 100%;
+        overflow: hidden;
     }
     
     .email-item.unread {
@@ -452,7 +456,8 @@
         min-width: 0;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
+        overflow: hidden;
     }
 
     .email-header {
@@ -464,13 +469,14 @@
 
     .email-sender {
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         color: #202124;
         flex: 1;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        max-width: 150px;
     }
 
     .email-time {
@@ -481,20 +487,22 @@
 
     .email-subject {
         font-weight: 500;
-        font-size: 14px;
+        font-size: 13px;
         color: #202124;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        margin-bottom: 2px;
     }
 
     .email-preview {
-        font-size: 13px;
+        font-size: 12px;
         color: #5f6368;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        line-height: 1.4;
+        line-height: 1.3;
+        max-width: 100%;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -540,46 +548,57 @@
 
 <<<<<<< HEAD
 @media (max-width: 768px) {
+        .email-section {
+            padding: 2px;
+        }
+        
         .email-item {
-            padding: 8px 12px;
-            gap: 8px;
-            min-height: 60px;
+            padding: 6px 8px;
+            gap: 6px;
+            min-height: 50px;
         }
         
         .email-avatar {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
         }
         
         .avatar-initials {
-            font-size: 14px;
+            font-size: 12px;
         }
         
         .email-sender {
-            font-size: 13px;
-            max-width: 120px;
+            font-size: 12px;
+            max-width: 80px;
         }
         
         .email-time {
-            font-size: 11px;
-            min-width: 40px;
+            font-size: 10px;
+            min-width: 35px;
         }
         
         .email-subject {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
         }
         
         .email-preview {
-            font-size: 12px;
+            font-size: 11px;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
         }
         
         .email-checkbox {
-            transform: scale(0.9);
+            transform: scale(0.8);
         }
         
         .email-star {
-            font-size: 14px;
+            font-size: 12px;
+        }
+        
+        .email-content {
+            gap: 1px;
         }
     }
 
@@ -959,7 +978,7 @@ function renderEmails() {
 <<<<<<< HEAD
                     <div class="email-preview">${email.preview ? email.preview.split(' ').slice(0, 3).join(' ') + (email.preview.split(' ').length > 3 ? '...' : '') : ''}</div>
 =======
-                    <div class="email-preview">${email.preview || ''}</div>
+                    <div class="email-preview">${email.preview ? (email.preview.length > 50 ? email.preview.substring(0, 50) + '...' : email.preview) : ''}</div>
 >>>>>>> 521f1f83f3e48ac2ffeb4700e78dceb7f1a476fc
                 </div>
             </div>
@@ -1157,7 +1176,9 @@ function initializeNotifications() {
 
 // Request FCM token and notification permission
 function requestNotificationPermission() {
-    messaging.getToken({ vapidKey: 'BP_mMwt0-nhtG6iqksNYPbKc_ynDDfrQCunZ7RkXS939_HoPZmNHw0Rxheqzni9-70HViFXvST2lVKY0JwBrk0E' })
+    Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+            messaging.getToken({ vapidKey: 'BP_mMwt0-nhtG6iqksNYPbKc_ynDDfrQCunZ7RkXS939_HoPZmNHw0Rxheqzni9-70HViFXvST2lVKY0JwBrk0E' })
         .then((currentToken) => {
             if (currentToken) {
                 console.log('FCM Token:', currentToken);
@@ -1187,6 +1208,10 @@ function requestNotificationPermission() {
             console.log('An error occurred while retrieving token:', err);
             requestBrowserNotificationPermission();
         });
+        } else {
+            console.log('Notification permission denied');
+        }
+    });
 }
 
 // Fallback to browser notifications
@@ -1213,6 +1238,9 @@ async function loadSavedAccounts() {
             loggedInEmails.push(currentEmail);
             localStorage.setItem('roxli_logged_accounts', JSON.stringify(loggedInEmails));
         }
+        
+        // Skip API call if no other accounts
+        if (loggedInEmails.length <= 1) return;
         
         const emailParams = loggedInEmails.map(email => `emails=${encodeURIComponent(email)}`).join('&');
         const response = await fetch(`/api/available-accounts?${emailParams}`);

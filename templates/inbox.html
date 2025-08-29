@@ -675,13 +675,17 @@
         </div>
         
         <div style="flex:1"></div>
-        <div class="profile-initials" style="background-color: #667eea;" onclick="toggleDropdown()">
-            {{ user.firstName[0] }}{{ user.lastName[0] }}
+        <div class="profile-avatar-wrapper" style="position: relative; width: 40px; height: 40px;">
+            <div class="profile-initials" onclick="toggleDropdown()" style="background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
+                {{ user.firstName[0] }}{{ user.lastName[0] }}
+            </div>
         </div>
         <div class="dropdown" id="profileDropdown">
             <div class="dropdown-header">
-                <div class="profile-initials" style="background-color: #667eea; width: 40px; height: 40px; font-size: 16px;">
-                    {{ user.firstName[0] }}{{ user.lastName[0] }}
+                <div class="dropdown-avatar-wrapper" style="position: relative; width: 40px; height: 40px;">
+                    <div class="profile-initials" style="background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; color: white; width: 40px; height: 40px; border-radius: 50%;">
+                        {{ user.firstName[0] }}{{ user.lastName[0] }}
+                    </div>
                 </div>
                 <div>
                     <div class="dropdown-name">{{ user.firstName }} {{ user.lastName }}</div>
@@ -1309,9 +1313,16 @@ async function loadSavedAccounts() {
                 const accountItem = document.createElement('div');
                 accountItem.className = 'account-item';
                 accountItem.onclick = () => switchToAccount(account.email);
+                const hasAvatar = account.avatar && !account.avatar.includes('data:image/svg+xml');
                 accountItem.innerHTML = `
-                    <div class="account-avatar-wrapper" style="width: 32px; height: 32px; flex-shrink: 0;">
-                        <img src="${account.avatar}" alt="${account.firstName}" class="account-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                    <div class="account-avatar-wrapper" style="position: relative; width: 32px; height: 32px; flex-shrink: 0;">
+                        ${hasAvatar ? 
+                            `<img src="${account.avatar}" alt="${account.firstName}" class="account-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
+                            ''
+                        }
+                        <div class="profile-initials" style="background: linear-gradient(135deg, #667eea, #764ba2); display: ${hasAvatar ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: white; width: 32px; height: 32px; border-radius: 50%; ${hasAvatar ? 'position: absolute; top: 0; left: 0;' : ''}">
+                            ${account.firstName[0]}${account.lastName[0]}
+                        </div>
                     </div>
                     <div class="account-info" style="flex: 1; min-width: 0;">
                         <div class="account-name" style="font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${account.firstName} ${account.lastName}</div>

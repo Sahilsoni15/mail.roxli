@@ -277,7 +277,7 @@ def get_emails():
                     'id': email_id,
                     'from': email_data.get('from', ''),
                     'senderName': sender_name,
-                    'senderAvatar': f'https://ui-avatars.com/api/?name={sender_name.replace(" ", "+")}&background=random&size=40',
+                    'senderAvatar': f'https://ui-avatars.com/api/?name={sender_name.replace(" ", "+")}&background=667eea&color=fff&size=40',
                     'subject': clean_subject,
                     'preview': clean_preview,
                     'time': email_data.get('time', ''),
@@ -1000,7 +1000,7 @@ def get_available_accounts():
                     'email': email,
                     'firstName': first_name,
                     'lastName': last_name,
-                    'avatar': None
+                    'avatar': f'https://ui-avatars.com/api/?name={first_name}+{last_name}&background=667eea&color=fff&size=32'
                 })
         
         return jsonify({'accounts': accounts})

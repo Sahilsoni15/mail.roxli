@@ -135,6 +135,13 @@
     .menu-item:hover {
         background-color: rgba(26, 115, 232, 0.1);
     }
+    
+    .menu-item.active {
+        background-color: rgba(26, 115, 232, 0.15);
+        color: #1a73e8;
+        font-weight: 600;
+        border-right: 3px solid #1a73e8;
+    }
 
     .top-bar {
         position: fixed;
@@ -664,11 +671,11 @@
         <button class="compose-btn" onclick="window.location.href='/compose'">
             <i class="fa-solid fa-pencil"></i> Compose
         </button>
-        <div class="menu-item" onclick="loadAllEmails()" data-category="All">All Mail</div>
-        <div class="menu-item" onclick="filterCategory('Inbox')" data-category="Inbox">Inbox</div>
-        <div class="menu-item" onclick="filterCategory('Starred')" data-category="Starred">Starred</div>
-        <div class="menu-item" onclick="loadSentEmails()" data-category="Sent">Sent</div>
-        <div class="menu-item" onclick="filterCategory('Drafts')" data-category="Drafts">Drafts</div>
+        <div class="menu-item" onclick="setActiveView('all')" data-category="All">All Mail</div>
+        <div class="menu-item" onclick="setActiveView('inbox')" data-category="Inbox">Inbox</div>
+        <div class="menu-item" onclick="setActiveView('starred')" data-category="Starred">Starred</div>
+        <div class="menu-item" onclick="setActiveView('sent')" data-category="Sent">Sent</div>
+        <div class="menu-item" onclick="setActiveView('drafts')" data-category="Drafts">Drafts</div>
     </div>
 
     <!-- Top Bar -->
@@ -864,13 +871,24 @@ document.addEventListener('click', function(e) {
 });
 
 function filterCategory(category) {
-    document.querySelectorAll('.email-item').forEach(item => {
-        if(category === 'All' || item.dataset.category === category) {
-            item.style.display = '';
-        } else {
-            item.style.display = 'none';
-        }
-    });
+    if (category === 'Starred') {
+        document.querySelectorAll('.email-item').forEach(item => {
+            const starIcon = item.querySelector('.email-star');
+            if (starIcon && starIcon.textContent === '⭐') {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    } else {
+        document.querySelectorAll('.email-item').forEach(item => {
+            if(category === 'All' || item.dataset.category === category) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
 }
 
 function setupSearchListeners() {
@@ -1211,8 +1229,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Force cleanup then load emails
     fetch('/api/cleanup-emails', { method: 'POST' })
-        .then(() => loadEmails())
-        .catch(() => loadEmails());
+        .then(() => {
+            setActiveView('inbox'); // Set initial view
+            startAutoRefresh(); // Start auto refresh
+        })
+        .catch(() => {
+            setActiveView('inbox');
+            startAutoRefresh();
+        });
     
     loadSavedAccounts();
     checkFirstTimeUser();
@@ -1759,12 +1783,67 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Auto-refresh emails every 30 seconds and check for notifications
-setInterval(() => {
+let currentView = 'inbox';
+let autoRefreshInterval;
+
+// Auto-refresh emails based on current view
+function startAutoRefresh() {
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    
+    autoRefreshInterval = setInterval(() => {
+        refreshCurrentView();
+        checkForNewEmails();
+        checkForNotifications();
+    }, 5000); // Check every 5 seconds for faster notifications
+}
+
+function refreshCurrentView() {
+    switch(currentView) {
+        case 'all':
+            loadAllEmails();
+            break;
+        case 'inbox':
+            loadEmails();
+            break;
+        case 'sent':
+            loadSentEmails();
+            break;
+        case 'starred':
+            loadStarredEmails();
+            break;
+        case 'drafts':
+            loadDrafts();
+            break;
+        default:
+            loadEmails();
+    }
+}
+
+function setActiveView(view) {
+    currentView = view;
+    
+    // Update active menu item
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    document.querySelector(`[data-category="${view.charAt(0).toUpperCase() + view.slice(1)}"]`).classList.add('active');
+    
+    // Load the appropriate view
+    refreshCurrentView();
+}
+
+function loadStarredEmails() {
     loadEmails();
-    checkForNewEmails();
-    checkForNotifications();
-}, 5000); // Check every 5 seconds for faster notifications
+    setTimeout(() => {
+        filterCategory('Starred');
+    }, 100);
+}
+
+function loadDrafts() {
+    // For now, show empty drafts
+    const emailList = document.getElementById('mailList');
+    emailList.innerHTML = '<div style="padding: 40px; text-align: center; color: #5f6368;">No drafts</div>';
+}
 
 // PWA install prompt
 let deferredPrompt;

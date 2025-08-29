@@ -529,13 +529,10 @@ def get_email(email_id):
         
         # Security check: ensure email belongs to current user
         if email_data:
-            user_owns_email = False
-            if email_folder == 'inbox' and email_data.get('to') == user['email']:
-                user_owns_email = True
-            elif email_folder == 'sent' and email_data.get('from') == user['email']:
-                user_owns_email = True
-            elif email_data.get('to') == user['email'] or email_data.get('from') == user['email']:
-                user_owns_email = True
+            user_owns_email = (
+                email_data.get('to') == user['email'] or 
+                email_data.get('from') == user['email']
+            )
                 
             if not user_owns_email:
                 return jsonify({'error': 'Access denied'}), 403
@@ -649,9 +646,18 @@ def send_welcome_email():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Roxli Mail</title>
+    <style>
+        @media (prefers-color-scheme: dark) {{
+            .email-container {{ background: #2d2e30 !important; color: #e8eaed !important; }}
+            .content-section {{ background: #2d2e30 !important; color: #e8eaed !important; }}
+            .feature-box {{ background: #3c4043 !important; border-color: #5f6368 !important; }}
+            .cta-section {{ background: linear-gradient(135deg, #1a1a1a 0%, #2d2e30 100%) !important; }}
+            .footer {{ background: #1f1f1f !important; border-color: #3c4043 !important; color: #9aa0a6 !important; }}
+        }}
+    </style>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8f9fa; color: #202124;">
-    <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <div class="email-container" style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #1a73e8 0%, #667eea 100%); padding: 40px 30px; text-align: center; color: white;">
             <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">
@@ -662,14 +668,14 @@ def send_welcome_email():
         </div>
         
         <!-- Content -->
-        <div style="padding: 40px 30px; color: #202124;">
+        <div class="content-section" style="padding: 40px 30px; color: #202124;">
             <!-- Getting Started -->
             <div style="margin-bottom: 40px;">
                 <h2 style="color: #1a73e8; font-size: 24px; margin: 0 0 20px 0; display: flex; align-items: center;">
                     <span style="background: #e8f0fe; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 20px;">🚀</span>
                     Quick Start Guide
                 </h2>
-                <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 4px solid #1a73e8; color: #202124;">
+                <div class="feature-box" style="background: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 4px solid #1a73e8; color: #202124;">
                     <div style="display: flex; align-items: center; margin-bottom: 15px;">
                         <span style="background: #1a73e8; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">1</span>
                         <span><strong>Compose:</strong> Click the blue compose button to send your first email</span>
@@ -720,21 +726,21 @@ def send_welcome_email():
             </div>
             
             <!-- Call to Action -->
-            <div style="text-align: center; background: linear-gradient(135deg, #e8f0fe 0%, #f3e8ff 100%); padding: 30px; border-radius: 12px; margin-bottom: 30px;">
+            <div class="cta-section" style="text-align: center; background: linear-gradient(135deg, #e8f0fe 0%, #f3e8ff 100%); padding: 30px; border-radius: 12px; margin-bottom: 30px;">
                 <h3 style="color: #1a73e8; margin: 0 0 15px 0;">Ready to get started?</h3>
                 <a href="https://mail.roxli.in" style="display: inline-block; background: #1a73e8; color: white; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; margin: 0 10px 10px 0;">Open Roxli Mail</a>
                 <a href="https://account.roxli.in" style="display: inline-block; background: transparent; color: #1a73e8; padding: 12px 30px; border: 2px solid #1a73e8; border-radius: 25px; text-decoration: none; font-weight: 600; margin: 0 10px 10px 0;">Account Settings</a>
             </div>
             
             <!-- Support -->
-            <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0; color: #202124;">
+            <div class="feature-box" style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0; color: #202124;">
                 <p style="margin: 0 0 10px 0; color: #5f6368;">Need help? We're here for you!</p>
                 <p style="margin: 0; font-size: 14px;">Reply to this email or visit our <a href="#" style="color: #1a73e8;">Help Center</a></p>
             </div>
         </div>
         
         <!-- Footer -->
-        <div style="background: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0; color: #202124;">
+        <div class="footer" style="background: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0; color: #202124;">
             <p style="margin: 0 0 10px 0; color: #1a73e8; font-weight: 600; font-size: 16px;">The Roxli Mail Team</p>
             <p style="margin: 0 0 15px 0; color: #5f6368; font-size: 14px;">Making email secure, simple, and beautiful</p>
             <div style="font-size: 12px; color: #9aa0a6; line-height: 1.5;">

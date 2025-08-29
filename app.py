@@ -24,7 +24,21 @@ try:
         import json
         cred = credentials.Certificate(json.loads(firebase_config))
     else:
-        cred = credentials.Certificate('roxli-mail-firebase-adminsdk-fbsvc-68633609db.json')
+        # Fallback service account config
+        service_account_info = {
+            "type": "service_account",
+            "project_id": "roxli-mail",
+            "private_key_id": os.environ.get('FIREBASE_PRIVATE_KEY_ID', '1e007d2ab1a61880f317fccf69385f7ece703109'),
+            "private_key": os.environ.get('FIREBASE_PRIVATE_KEY', '-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCLvTGvVte33sqR\n/VmFydkA4q8XX+9dqkXuGq1/Z8A6UZlrWjEYeTuDuXVO3D0DXGooj8RBayogMT1A\nDXcgtpM9RpBoE1ACCl8ZLsnvtpeF+mpnvWFgdQWrOJrxmjdBF9IfBZKSNA+jQeTL\n1GZE0BdaLHDC3qbrMD8FGpM8bIfnkeSZ/7bWuJLsJQuDD2Gok0ybpskmsXbYsduv\n+71HbI3ucLZWjkh1CrL6Rua9Z2sbIBf5xrVQl9CC5JNb7iEP4v3N8bojPAnb06fJ\nn4bXK2QHfh8YKa4WQOm2amnIWf1D+3p8RAXzVD5n7JqqwFX1gcaH/5eX7ilMTgF9\nO/2xmjixAgMBAAECggEABIi+iHhyZnJxszv7wCYVBvzT/perzie8viWadJRavemw\n5zVVe3xPjI4jeswVpLrGbQuBLDg8dS/z01S8hVC3RVk5TU83HOHWRRxqC/+qOfwu\noLAZ7UXOycf76xP8b/3EYSJOp7TNvxffwydgrCHuaAwiGoib9OyrVtCOb3r8C+z5\nLdHfgCrf4wGwrj7hFvcWMH4M/Ga+XN3NmhGOD43l4Se+nab0zCwUk7ZIaC2L9Obm\nDFYURbOiNs+HvY2ZypHUWwidJd90HA7rn8ge6s2qlwaEcIrLEDJfjaDMGgkC/5L4\nA7Ygdzu9hNgWSiYoyxbQ4KrYaUSFGZTC3IQrG0OOWQKBgQDAPEFRgWorJZi8DBmv\nI5Aaz0eDOr3azHrt6o2Qal6rrMl1TeL69S28etrFEVFmxACQCmxJXjdBhhOnv5fu\nCMZTrI4QGdYeFm4tEuOzos6oojO8AUGp18ZBruWfcibbCZ7yFpIusYHcli71az0o\n11YRgNaSvYwS1UR5MVvtPecRzQKBgQC6FzEGSK5JNkG1f80G3lE++JXADwQw5CqX\n1NIj0kjhd7EIZ6UMecxhPpySideFR4z3r0rwZbfJvhDWxiEwLZ7uSP/2ixn1s5Ni\nboh05DxNCgZ+aOvLyM9RSpdsJ7edMQkYS+pHxjieiy6cfeDX2tytkOorD9e4boGv\nJcUF3b1udQKBgQCPeqm5/uDSMW6NNG7bJK0DBaC3ltlrfGFoQD/HAU2FzyJSVn7K\nlsK7QesVWXarQDG3UMBABn0xf7Qd6Uepl40HmOwzokUJEe7L36RqSGL8xIvekAWF\nkhJcpgCnAFl19PlYcXZMOZrWnJWSAaeVWxvXVpVQ0v7Ac8N2vVuCeEiGJQKBgQCO\n3vdYp7yHoQxZ2MEEoPMnsZrnVaAWGVdKMq8TqYMi984HceuZ5Hkxv+xd5U5+mSx1\njTOv1aiBT1eGTZ91adE3iPxbwPgxV6m0TMCfXgud6jCKJOvEDWx+MRKIiwXBvcAJ\n018Ps/QMZTdoFozlrLb42uWuIf+xLcaLPihCFLg3cQKBgQCJvF83IgZqVXK7sWNx\nf7pxsZ4piNMfwxwcJa69EkTetiXUZ2jfKIjMsiB5iOD1ERxoHx0r4feolDM/0pa2\nhhMwm8D60wwa6zQ+hjPv4htmlZ+RMRmVhgmswxX/f/0kmVIGGp4pMwOxBSjh3NNN\n6JN1r4depQXdl48H34H/C4iY+A==\n-----END PRIVATE KEY-----\n').replace('\\n', '\n'),
+            "client_email": "firebase-adminsdk-fbsvc@roxli-mail.iam.gserviceaccount.com",
+            "client_id": "114323036944172246315",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40roxli-mail.iam.gserviceaccount.com",
+            "universe_domain": "googleapis.com"
+        }
+        cred = credentials.Certificate(service_account_info)
     
     mail_app = firebase_admin.initialize_app(cred, {
         'databaseURL': os.environ.get('FIREBASE_DATABASE_URL', 'https://roxli-mail-default-rtdb.firebaseio.com/')
@@ -33,12 +47,7 @@ try:
     print("Firebase mail app initialized successfully")
 except Exception as e:
     print(f"Firebase initialization failed: {e}")
-    try:
-        mail_app = firebase_admin.initialize_app(name='mail')
-        print("Firebase mail app initialized with default credentials")
-    except:
-        print("Failed to initialize Firebase app")
-        mail_app = None
+    mail_app = None
 
 # Security headers
 @app.after_request

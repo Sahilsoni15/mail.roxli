@@ -1356,7 +1356,7 @@ function addNewAccount() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Save account to both logged accounts and saved accounts
+                    // Save account to both logged accounts and saved accounts WITHOUT switching
                     const loggedAccounts = JSON.parse(localStorage.getItem('roxli_logged_accounts') || '[]');
                     if (!loggedAccounts.includes(event.data.user.email)) {
                         loggedAccounts.push(event.data.user.email);
@@ -1373,7 +1373,9 @@ function addNewAccount() {
                     }
                     localStorage.setItem('roxli_accounts', JSON.stringify(savedAccounts));
                     
-                    window.location.reload();
+                    // Just reload saved accounts, don't switch sessions
+                    loadSavedAccounts();
+                    showNotification(`Account ${event.data.user.email} added successfully`);
                 }
             });
         }

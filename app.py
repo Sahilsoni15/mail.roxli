@@ -97,12 +97,17 @@ def clean_merge_conflicts(text):
         return text
     
     import re
-    # Remove merge conflict markers and content between them
-    text = re.sub(r'<<<<<<< HEAD.*?=======.*?>>>>>>> [a-f0-9]+', '', text, flags=re.DOTALL)
+    # Remove everything from <<<<<<< HEAD to >>>>>>> hash
     text = re.sub(r'<<<<<<< HEAD.*?>>>>>>> [a-f0-9]+', '', text, flags=re.DOTALL)
+    # Remove standalone markers
+    text = re.sub(r'<<<<<<< HEAD.*?=======', '', text, flags=re.DOTALL)
     text = re.sub(r'=======.*?>>>>>>> [a-f0-9]+', '', text, flags=re.DOTALL)
-    # Clean up extra whitespace
-    text = re.sub(r'\n\s*\n', '\n', text)
+    text = re.sub(r'<<<<<<< HEAD', '', text)
+    text = re.sub(r'=======', '', text)
+    text = re.sub(r'>>>>>>> [a-f0-9]+', '', text)
+    # Clean up extra whitespace and newlines
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'^\s+|\s+$', '', text)
     return text.strip()
 
 def get_current_user():

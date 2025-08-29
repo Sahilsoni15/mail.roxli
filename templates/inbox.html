@@ -189,7 +189,7 @@
         border-radius: 8px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         min-width: 320px;
-        max-height: 500px;
+        max-height: calc(100vh - 80px);
         overflow-y: auto;
         display: none;
         z-index: 1001;
@@ -381,6 +381,10 @@
         padding: 12px 16px;
         cursor: pointer;
         border-bottom: 1px solid #f0f0f0;
+        min-height: 60px;
+        flex-shrink: 0;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .account-item:hover {
@@ -932,7 +936,14 @@ function logout() {
 let emails = [];
 
 function loadEmails() {
-    fetch('/api/emails')
+    // Clean emails first, then load
+    fetch('/api/cleanup-emails', { method: 'POST' })
+        .then(() => {
+            return fetch('/api/emails');
+        })
+        .catch(() => {
+            return fetch('/api/emails');
+        })
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -1102,22 +1113,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateNotificationBadge();
 });
 
-// Clean up existing emails with merge conflicts
-function cleanupEmails() {
-    fetch('/api/cleanup-emails', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.cleaned > 0) {
-            console.log(`Cleaned ${data.cleaned} emails`);
-        }
-    })
-    .catch(error => {
-        console.error('Error cleaning emails:', error);
-    });
-}
+
 
 // Check if we should show notification permission banner
 function checkNotificationPermission() {
@@ -1257,42 +1253,35 @@ async function loadSavedAccounts() {
             localStorage.setItem('roxli_logged_accounts', JSON.stringify(loggedInEmails));
         }
         
-        // Skip API call if no other accounts
-        if (loggedInEmails.length <= 1) return;
+        const accountsList = document.getElementById('savedAccountsList');
+        if (!accountsList) return;
         
-        const emailParams = loggedInEmails.map(email => `emails=${encodeURIComponent(email)}`).join('&');
-        const response = await fetch(`/api/available-accounts?${emailParams}`);
+        accountsList.innerHTML = '';
         
-        if (response.ok) {
-            const data = await response.json();
-            const accountsList = document.getElementById('savedAccountsList');
-            accountsList.innerHTML = '';
-            
-            const otherAccounts = data.accounts.filter(acc => acc.email !== currentEmail);
-            
-            if (otherAccounts.length > 0) {
-                otherAccounts.forEach(account => {
-                    const accountItem = document.createElement('div');
-                    accountItem.className = 'account-item';
-                    accountItem.onclick = () => switchToAccount(account.email);
-                    accountItem.innerHTML = `
-                        <div class="account-avatar-wrapper" style="position: relative; width: 32px; height: 32px;">
-                            ${account.avatar && !account.avatar.includes('data:image/svg+xml') ? 
-                                `<img src="${account.avatar}" alt="${account.firstName}" class="account-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
-                                ''
-                            }
-                            <div class="profile-initials" style="background: linear-gradient(135deg, #667eea, #764ba2); display: ${account.avatar && !account.avatar.includes('data:image/svg+xml') ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: white; width: 32px; height: 32px; border-radius: 50%; position: ${account.avatar && !account.avatar.includes('data:image/svg+xml') ? 'absolute' : 'static'}; top: 0; left: 0;">
-                                ${account.firstName[0]}${account.lastName[0]}
-                            </div>
-                        </div>
-                        <div class="account-info">
-                            <div class="account-name">${account.firstName} ${account.lastName}</div>
-                            <div class="account-email">${account.email}</div>
-                        </div>
-                    `;
-                    accountsList.appendChild(accountItem);
-                });
-            }
+        // Show all logged accounts except current
+        const otherEmails = loggedInEmails.filter(email => email !== currentEmail);
+        
+        if (otherEmails.length > 0) {
+            // Create accounts from stored emails
+            otherEmails.forEach(email => {
+                const nameParts = email.split('@')[0].split('.');
+                const firstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : 'User';
+                const lastName = nameParts[1] ? nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1) : '';
+                
+                const accountItem = document.createElement('div');
+                accountItem.className = 'account-item';
+                accountItem.onclick = () => switchToAccount(email);
+                accountItem.innerHTML = `
+                    <div class="account-avatar-wrapper" style="width: 32px; height: 32px;">
+                        <img src="https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=667eea&color=fff&size=32" alt="${firstName}" class="account-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                    </div>
+                    <div class="account-info">
+                        <div class="account-name">${firstName} ${lastName}</div>
+                        <div class="account-email">${email}</div>
+                    </div>
+                `;
+                accountsList.appendChild(accountItem);
+            });
         }
     } catch (error) {
         console.error('Error loading saved accounts:', error);

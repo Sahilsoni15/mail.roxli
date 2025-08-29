@@ -936,14 +936,7 @@ function logout() {
 let emails = [];
 
 function loadEmails() {
-    // Clean emails first, then load
-    fetch('/api/cleanup-emails', { method: 'POST' })
-        .then(() => {
-            return fetch('/api/emails');
-        })
-        .catch(() => {
-            return fetch('/api/emails');
-        })
+    fetch('/api/emails')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -1104,8 +1097,10 @@ window.addEventListener('load', function() {
 
 document.addEventListener('DOMContentLoaded', function() {
     setupSearchListeners();
-    cleanupEmails();
-    loadEmails();
+    // Force cleanup of corrupted emails
+    fetch('/api/cleanup-emails', { method: 'POST' })
+        .then(() => loadEmails())
+        .catch(() => loadEmails());
     loadSavedAccounts();
     checkFirstTimeUser();
     checkNotificationPermission();

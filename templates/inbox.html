@@ -664,7 +664,7 @@
         <button class="compose-btn" onclick="window.location.href='/compose'">
             <i class="fa-solid fa-pencil"></i> Compose
         </button>
-        <div class="menu-item" onclick="filterCategory('All')" data-category="All">All Mail</div>
+        <div class="menu-item" onclick="loadAllEmails()" data-category="All">All Mail</div>
         <div class="menu-item" onclick="filterCategory('Inbox')" data-category="Inbox">Inbox</div>
         <div class="menu-item" onclick="filterCategory('Starred')" data-category="Starred">Starred</div>
         <div class="menu-item" onclick="loadSentEmails()" data-category="Sent">Sent</div>
@@ -727,6 +727,13 @@
     <div class="email-section">
         <div class="email-search desktop-only">
             <input type="text" id="mailSearch" placeholder="Search mails...">
+        </div>
+        
+        <div id="selectionToolbar" style="display: none; background: #e3f2fd; padding: 8px 16px; border-bottom: 1px solid #bbdefb; align-items: center; gap: 12px;">
+            <span id="selectedCount">0 selected</span>
+            <button onclick="selectAllEmails()" style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">Select All</button>
+            <button onclick="deselectAllEmails()" style="background: none; border: 1px solid #5f6368; color: #5f6368; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">Deselect All</button>
+            <button onclick="deleteSelectedEmails()" style="background: #ea4335; border: none; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;"><i class="fa-solid fa-trash"></i> Delete</button>
         </div>
 
         <!-- Notification Permission Banner -->
@@ -1056,21 +1063,97 @@ function selectEmail(emailId, checked) {
     updateSelectionUI();
 }
 
+function selectAllEmails() {
+    document.querySelectorAll('.email-item:not([style*="display: none"]) .email-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+        selectedEmails.add(checkbox.closest('.email-item').dataset.id);
+    });
+    updateSelectionUI();
+}
+
+function deselectAllEmails() {
+    document.querySelectorAll('.email-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    selectedEmails.clear();
+    updateSelectionUI();
+}
+
+function loadAllEmails() {
+    // Load both inbox and sent emails
+    Promise.all([
+        fetch('/api/emails').then(r => r.json()),
+        fetch('/api/sent-emails').then(r => r.json())
+    ])
+    .then(([inboxData, sentData]) => {
+        const allEmails = [];
+        
+        // Add inbox emails
+        if (inboxData.emails) {
+            allEmails.push(...inboxData.emails.map(email => ({...email, folder: 'inbox'})));
+        }
+        
+        // Add sent emails
+        if (sentData.emails) {
+            allEmails.push(...sentData.emails.map(email => ({...email, folder: 'sent'})));
+        }
+        
+        // Sort by timestamp
+        allEmails.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
+        emails = allEmails;
+        renderAllEmails();
+    })
+    .catch(error => {
+        console.error('Error loading all emails:', error);
+        loadEmails(); // Fallback to inbox only
+    });
+}
+
+function renderAllEmails() {
+    const emailList = document.getElementById('mailList');
+    
+    if (emails.length > 0) {
+        emailList.innerHTML = emails.map(email => {
+            const isInbox = email.folder === 'inbox';
+            const displayEmail = isInbox ? email.from : `To: ${email.to}`;
+            const icon = isInbox ? (email.starred ? '⭐' : '☆') : '📤';
+            
+            return `
+                <div class="email-item ${!email.read && isInbox ? 'unread' : ''}" data-id="${email.id}" data-category="All" onclick="openEmail('${email.id}')">
+                    <input type="checkbox" class="email-checkbox" onclick="event.stopPropagation(); selectEmail('${email.id}', this.checked)">
+                    <span class="email-star" onclick="event.stopPropagation(); ${isInbox ? `toggleStar('${email.id}')` : ''}">${icon}</span>
+                    <div class="email-avatar">
+                        <div class="avatar-initials" style="background-color: #667eea;">
+                            ${isInbox ? (email.from ? email.from[0].toUpperCase() : 'U') : (email.to ? email.to[0].toUpperCase() : 'U')}
+                        </div>
+                    </div>
+                    <div class="email-content">
+                        <div class="email-header">
+                            <div class="email-sender">${displayEmail || 'Unknown'}</div>
+                            <div class="email-time">${email.time || ''}</div>
+                        </div>
+                        <div class="email-subject">${email.subject || '(No subject)'}</div>
+                        <div class="email-preview">${email.preview ? (email.preview.length > 50 ? email.preview.substring(0, 50) + '...' : email.preview) : ''}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        emailList.innerHTML = '<div style="padding: 40px; text-align: center; color: #5f6368;">No emails found</div>';
+    }
+}
+
 function updateSelectionUI() {
     const count = selectedEmails.size;
-    const selectionInfo = document.getElementById('selectionInfo');
+    const toolbar = document.getElementById('selectionToolbar');
+    const countSpan = document.getElementById('selectedCount');
     
     if (count > 0) {
-        if (!selectionInfo) {
-            const info = document.createElement('div');
-            info.id = 'selectionInfo';
-            info.style.cssText = 'margin-left: 15px; font-size: 12px; color: var(--accent); background: rgba(26,115,232,0.1); padding: 4px 8px; border-radius: 12px;';
-            document.querySelector('.top-bar').appendChild(info);
-        }
-        document.getElementById('selectionInfo').innerHTML = `<span>${count}</span> selected`;
-        document.getElementById('selectionInfo').style.display = 'block';
+        toolbar.style.display = 'flex';
+        countSpan.textContent = `${count} selected`;
     } else {
-        if (selectionInfo) selectionInfo.style.display = 'none';
+        toolbar.style.display = 'none';
     }
 }
 

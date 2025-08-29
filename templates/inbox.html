@@ -446,6 +446,16 @@
         .account-item:hover {
             background-color: rgba(26,115,232,0.15) !important;
         }
+        
+        .account-logout-btn:hover {
+            background-color: #fce8e6 !important;
+            color: #ea4335 !important;
+            opacity: 1 !important;
+        }
+        
+        .account-item:hover .account-logout-btn {
+            opacity: 1;
+        }
     }
 
     .email-avatar {
@@ -1340,6 +1350,7 @@ async function loadSavedAccounts() {
                         <div class="account-name" style="font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${account.firstName} ${account.lastName}</div>
                         <div class="account-email" style="font-size: 12px; color: #5f6368; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${account.email}</div>
                     </div>
+                    <button onclick="logoutAccount('${account.email}')" class="account-logout-btn" title="Logout from this device" style="background: none; border: none; color: #9aa0a6; font-size: 16px; cursor: pointer; padding: 4px; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; opacity: 0.7;">×</button>
                 `;
                 accountsList.appendChild(accountItem);
             });
@@ -1416,6 +1427,26 @@ function switchToAccount(email) {
         // Fallback to popup on error
         openAuthPopupForSwitch(email);
     });
+}
+
+function logoutAccount(email) {
+    if (confirm(`Logout ${email} from this device?`)) {
+        // Remove from saved accounts
+        const savedAccounts = JSON.parse(localStorage.getItem('roxli_accounts') || '[]');
+        const loggedAccounts = JSON.parse(localStorage.getItem('roxli_logged_accounts') || '[]');
+        
+        // Remove from both storage arrays
+        const updatedSaved = savedAccounts.filter(acc => acc.email !== email);
+        const updatedLogged = loggedAccounts.filter(acc => acc !== email);
+        
+        localStorage.setItem('roxli_accounts', JSON.stringify(updatedSaved));
+        localStorage.setItem('roxli_logged_accounts', JSON.stringify(updatedLogged));
+        
+        // Reload saved accounts to update dropdown
+        loadSavedAccounts();
+        
+        showNotification(`${email} logged out from this device`);
+    }
 }
 
 function openAuthPopupForSwitch(email) {

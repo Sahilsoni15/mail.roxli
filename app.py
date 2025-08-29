@@ -797,7 +797,9 @@ def subscribe_notifications():
     
     data = request.json
     token = data.get('token')
-    notification_type = data.get('type', 'browser')  # 'fcm' or 'browser'
+    notification_type = data.get('type', 'browser')
+    device_id = data.get('deviceId', 'unknown')
+    user_agent = data.get('userAgent', request.headers.get('User-Agent', ''))
     
     if not token:
         return jsonify({'error': 'Token required'}), 400
@@ -805,17 +807,20 @@ def subscribe_notifications():
     try:
         mail_db = db.reference('notifications', app=mail_app)
         
-        # Store user's notification preferences and token
-        user_settings = {
+        # Store device-specific notification settings
+        device_settings = {
             'notifications_enabled': True,
             'token': token,
             'type': notification_type,
+            'device_id': device_id,
+            'user_agent': user_agent[:200],
             'subscribed_at': datetime.now().timestamp(),
-            'user_agent': request.headers.get('User-Agent', '')[:200],
-            'ip_address': request.remote_addr
+            'ip_address': request.remote_addr,
+            'last_active': datetime.now().timestamp()
         }
         
-        mail_db.child('user_settings').child(user['id']).update(user_settings)
+        # Store per device to support multiple devices
+        mail_db.child('user_devices').child(user['id']).child(device_id).set(device_settings)
         
         # Test notification
         if notification_type == 'fcm':
@@ -923,22 +928,31 @@ def send_notification_to_user(user_id, title, body, data=None):
         # Store notification
         mail_db.child('user_notifications').child(user_id).child(notification_id).set(notification_data)
         
-        # Get user's FCM token and send push notification
+        # Send to all user devices
         try:
-            user_settings = mail_db.child('user_settings').child(user_id).get()
-            if user_settings and user_settings.get('notifications_enabled') and user_settings.get('token'):
-                token = user_settings['token']
-                notification_type = user_settings.get('type', 'browser')
+            user_devices = mail_db.child('user_devices').child(user_id).get() or {}
+            notification_sent = False
+            
+            for device_id, device_settings in user_devices.items():
+                if device_settings.get('notifications_enabled') and device_settings.get('token'):
+                    token = device_settings['token']
+                    notification_type = device_settings.get('type', 'browser')
+                    
+                    if notification_type == 'fcm':
+                        try:
+                            send_fcm_notification(token, title, body, data)
+                            print(f"FCM notification sent to device {device_id} for user {user_id}")
+                            notification_sent = True
+                        except Exception as e:
+                            print(f"Failed to send FCM to device {device_id}: {e}")
+                            # Remove invalid token
+                            mail_db.child('user_devices').child(user_id).child(device_id).delete()
+            
+            if not notification_sent:
+                print(f"No active devices found for user {user_id}")
                 
-                if notification_type == 'fcm':
-                    send_fcm_notification(token, title, body, data)
-                    print(f"FCM notification sent to user {user_id}")
-                else:
-                    print(f"Browser notification stored for user {user_id}")
-            else:
-                print(f"No FCM token found for user {user_id}")
         except Exception as e:
-            print(f"Error sending push notification: {e}")
+            print(f"Error sending push notifications: {e}")
         
         print(f"Notification stored for user {user_id}: {title}")
         return True

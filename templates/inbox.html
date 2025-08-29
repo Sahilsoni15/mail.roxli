@@ -15,6 +15,7 @@
 <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/logo.png') }}">
 <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/logo.png') }}">
 <link rel="shortcut icon" href="{{ url_for('static', filename='images/logo.png') }}">
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
@@ -656,7 +657,7 @@
         <div class="menu-item" onclick="filterCategory('All')" data-category="All">All Mail</div>
         <div class="menu-item" onclick="filterCategory('Inbox')" data-category="Inbox">Inbox</div>
         <div class="menu-item" onclick="filterCategory('Starred')" data-category="Starred">Starred</div>
-        <div class="menu-item" onclick="filterCategory('Sent')" data-category="Sent">Sent</div>
+        <div class="menu-item" onclick="loadSentEmails()" data-category="Sent">Sent</div>
         <div class="menu-item" onclick="filterCategory('Drafts')" data-category="Drafts">Drafts</div>
     </div>
 
@@ -1211,11 +1212,16 @@ function requestNotificationPermission() {
             if (currentToken) {
                 console.log('FCM Token:', currentToken);
                 
-                // Send token to server
+                // Send token to server with device info
                 fetch('/api/subscribe-notifications', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: currentToken, type: 'fcm' })
+                    body: JSON.stringify({ 
+                        token: currentToken, 
+                        type: 'fcm',
+                        userAgent: navigator.userAgent,
+                        deviceId: localStorage.getItem('device_id') || generateDeviceId()
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -1240,6 +1246,12 @@ function requestNotificationPermission() {
             console.log('Notification permission denied');
         }
     });
+}
+
+function generateDeviceId() {
+    const deviceId = 'device_' + Math.random().toString(36).substr(2, 9) + Date.now();
+    localStorage.setItem('device_id', deviceId);
+    return deviceId;
 }
 
 // Fallback to browser notifications
@@ -1569,7 +1581,73 @@ setInterval(() => {
     loadEmails();
     checkForNewEmails();
     checkForNotifications();
-}, 10000); // Check every 10 seconds for better responsiveness
+}, 5000); // Check every 5 seconds for faster notifications
+
+// PWA install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallButton();
+});
+
+function showInstallButton() {
+    const installBtn = document.createElement('button');
+    installBtn.innerHTML = '<i class="fa-solid fa-download"></i> Install App';
+    installBtn.style.cssText = 'position: fixed; bottom: 80px; right: 20px; background: #1a73e8; color: white; border: none; padding: 12px 16px; border-radius: 25px; font-size: 14px; cursor: pointer; z-index: 1000; box-shadow: 0 4px 12px rgba(26,115,232,0.3);';
+    installBtn.onclick = installApp;
+    document.body.appendChild(installBtn);
+}
+
+function installApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((result) => {
+            deferredPrompt = null;
+            document.querySelector('[onclick="installApp()"]')?.remove();
+        });
+    }
+}
+
+function loadSentEmails() {
+    fetch('/api/sent-emails')
+        .then(response => response.json())
+        .then(data => {
+            if (data.emails) {
+                emails = data.emails;
+                renderSentEmails();
+            }
+        })
+        .catch(error => console.error('Error loading sent emails:', error));
+}
+
+function renderSentEmails() {
+    const emailList = document.getElementById('mailList');
+    
+    if (emails.length > 0) {
+        emailList.innerHTML = emails.map(email => `
+            <div class="email-item" data-id="${email.id}" data-category="Sent" onclick="openEmail('${email.id}')">
+                <input type="checkbox" class="email-checkbox" onclick="event.stopPropagation(); selectEmail('${email.id}', this.checked)">
+                <span class="email-star">📤</span>
+                <div class="email-avatar">
+                    <div class="avatar-initials" style="background-color: #667eea;">
+                        ${email.to ? email.to[0].toUpperCase() : 'U'}
+                    </div>
+                </div>
+                <div class="email-content">
+                    <div class="email-header">
+                        <div class="email-sender">To: ${email.to || 'Unknown'}</div>
+                        <div class="email-time">${email.time || ''}</div>
+                    </div>
+                    <div class="email-subject">${email.subject || '(No subject)'}</div>
+                    <div class="email-preview">${email.preview ? (email.preview.length > 50 ? email.preview.substring(0, 50) + '...' : email.preview) : ''}</div>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        emailList.innerHTML = '<div style="padding: 40px; text-align: center; color: #5f6368;">No sent emails</div>';
+    }
+}
 
 // Check for new notifications from server
 function checkForNotifications() {

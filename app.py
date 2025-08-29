@@ -219,10 +219,12 @@ def get_emails():
         for email_id, email_data in user_emails.items():
             # Security check: ensure email belongs to current user
             if email_data.get('to') == user['email'] or email_data.get('from') == user['email']:
+                sender_name = email_data.get('senderName', email_data.get('from', '').split('@')[0])
                 emails.append({
                     'id': email_id,
                     'from': email_data.get('from', ''),
-                    'senderName': email_data.get('senderName', ''),
+                    'senderName': sender_name,
+                    'senderAvatar': f'https://ui-avatars.com/api/?name={sender_name.replace(" ", "+")}&background=random&size=40',
                     'subject': email_data.get('subject', ''),
                     'preview': email_data.get('preview', ''),
                     'time': email_data.get('time', ''),
@@ -297,10 +299,12 @@ def send_email():
         safe_subject = html.escape(subject)
         safe_body = html.escape(body)
         
+        sender_name = f"{user['firstName']} {user['lastName']}"
         email_data = {
             'id': email_id,
             'from': user['email'],
-            'senderName': f"{user['firstName']} {user['lastName']}",
+            'senderName': sender_name,
+            'senderAvatar': f'https://ui-avatars.com/api/?name={sender_name.replace(" ", "+")}&background=random&size=40',
             'to': to,
             'subject': safe_subject,
             'body': safe_body,
@@ -461,7 +465,7 @@ def get_email(email_id):
                     'id': 'welcome',
                     'from': 'team@roxli.in',
                     'senderName': 'Roxli Mail Team',
-                    'senderAvatar': '',
+                    'senderAvatar': 'https://ui-avatars.com/api/?name=Roxli+Mail+Team&background=1a73e8&color=fff&size=40',
                     'subject': 'Welcome to Roxli Mail! 🎉',
                     'body': f'''<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                         <h2 style="color: #1a73e8;">Welcome to Roxli Mail, {user['firstName']}!</h2>
@@ -494,11 +498,12 @@ def get_email(email_id):
                     'starred': False
                 }
             else:
+                sender_name = email_data.get('senderName', email_data.get('from', '').split('@')[0])
                 email = {
                     'id': email_id,
                     'from': email_data.get('from', ''),
-                    'senderName': email_data.get('senderName', email_data.get('from', '').split('@')[0]),
-                    'senderAvatar': email_data.get('senderAvatar', ''),
+                    'senderName': sender_name,
+                    'senderAvatar': email_data.get('senderAvatar', f'https://ui-avatars.com/api/?name={sender_name.replace(" ", "+")}&background=random&size=40'),
                     'subject': email_data.get('subject', ''),
                     'body': email_data.get('body', email_data.get('message', '')),
                     'message': email_data.get('message', email_data.get('body', '')),
@@ -546,6 +551,7 @@ def send_welcome_email():
             'id': email_id,
             'from': 'team@roxli.in',
             'senderName': 'Roxli Mail Team',
+            'senderAvatar': 'https://ui-avatars.com/api/?name=Roxli+Mail+Team&background=1a73e8&color=fff&size=40',
             'to': user['email'],
             'subject': 'Welcome to Roxli Mail! 🎉',
             'body': f'''<!DOCTYPE html>

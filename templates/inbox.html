@@ -1110,8 +1110,8 @@ const firebaseConfig = {
     authDomain: "roxli-mail.firebaseapp.com",
     projectId: "roxli-mail",
     storageBucket: "roxli-mail.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:dummy"
+    messagingSenderId: "539072741497",
+    appId: "1:539072741497:web:dummy"
 };
 
 let messaging = null;
@@ -1157,7 +1157,7 @@ function initializeNotifications() {
 
 // Request FCM token and notification permission
 function requestNotificationPermission() {
-    messaging.getToken({ vapidKey: 'YOUR_VAPID_KEY' })
+    messaging.getToken({ vapidKey: 'BP_mMwt0-nhtG6iqksNYPbKc_ynDDfrQCunZ7RkXS939_HoPZmNHw0Rxheqzni9-70HViFXvST2lVKY0JwBrk0E' })
         .then((currentToken) => {
             if (currentToken) {
                 console.log('FCM Token:', currentToken);

@@ -954,6 +954,25 @@ def send_notification_to_user(user_id, title, body, data=None):
         print(f"Error storing notification: {e}")
         return False
 
+@app.route('/api/reset-welcome-email', methods=['POST'])
+def reset_welcome_email():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        mail_db = db.reference('emails', app=mail_app)
+        # Delete all existing welcome emails
+        user_emails = mail_db.child(user['id']).child('inbox').get() or {}
+        for email_id, email_data in user_emails.items():
+            if email_data.get('from') == 'team@roxli.in':
+                mail_db.child(user['id']).child('inbox').child(email_id).delete()
+        
+        # Create fresh welcome email
+        return send_welcome_email()
+    except Exception as e:
+        return jsonify({'error': 'Failed to reset'}), 500
+
 @app.route('/api/cleanup-emails', methods=['POST'])
 def cleanup_emails():
     user = get_current_user()

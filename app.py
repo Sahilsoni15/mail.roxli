@@ -27,7 +27,7 @@ try:
         cred = credentials.Certificate('roxli-mail-firebase-adminsdk-fbsvc-68633609db.json')
     
     mail_app = firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://roxli-5aebd-default-rtdb.firebaseio.com/'
+        'databaseURL': os.environ.get('FIREBASE_DATABASE_URL', 'https://roxli-mail-default-rtdb.firebaseio.com/')
     }, name='mail')
     
     print("Firebase mail app initialized successfully")
@@ -322,15 +322,29 @@ def send_email():
         # Save to sender's sent folder
         mail_db.child(user['id']).child('sent').child(email_id).set(email_data)
         
-        # Find recipient and add to their inbox
-        auth_db = db.reference('users', app=mail_app)
-        all_users = auth_db.get() or {}
-        
+        # Find recipient and add to their inbox - need to check auth database
+        # For now, assume recipient exists and use email as identifier
+        # TODO: Implement proper user lookup via auth service API
         recipient_id = None
-        for uid, user_data in all_users.items():
-            if user_data.get('email') == to:
-                recipient_id = uid
-                break
+        
+        # Try to find existing user in mail database first
+        try:
+            import requests
+            # Call auth service to find user by email
+            auth_response = requests.post('https://auth.roxli.in/api/find-user', 
+                                        json={'email': to}, 
+                                        timeout=5)
+            if auth_response.status_code == 200:
+                auth_data = auth_response.json()
+                if auth_data.get('found'):
+                    recipient_id = auth_data['user']['id']
+        except Exception as e:
+            print(f"Error finding recipient: {e}")
+            # Fallback: create a simple hash-based ID for external emails
+            import hashlib
+            recipient_id = hashlib.md5(to.encode()).hexdigest()[:16]
+        
+
         
         if recipient_id:
             # Add to recipient's inbox

@@ -647,12 +647,21 @@ def send_welcome_email():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Roxli Mail</title>
     <style>
+        .text-primary {{ color: #202124; }}
+        .text-secondary {{ color: #5f6368; }}
+        .text-accent {{ color: #1a73e8; }}
+        .text-success {{ color: #34a853; }}
+        
         @media (prefers-color-scheme: dark) {{
-            .email-container {{ background: #2d2e30 !important; color: #e8eaed !important; }}
-            .content-section {{ background: #2d2e30 !important; color: #e8eaed !important; }}
+            .email-container {{ background: #2d2e30 !important; }}
+            .content-section {{ background: #2d2e30 !important; }}
             .feature-box {{ background: #3c4043 !important; border-color: #5f6368 !important; }}
             .cta-section {{ background: linear-gradient(135deg, #1a1a1a 0%, #2d2e30 100%) !important; }}
-            .footer {{ background: #1f1f1f !important; border-color: #3c4043 !important; color: #9aa0a6 !important; }}
+            .footer {{ background: #1f1f1f !important; border-color: #3c4043 !important; }}
+            .text-primary {{ color: #e8eaed !important; }}
+            .text-secondary {{ color: #9aa0a6 !important; }}
+            .text-accent {{ color: #8ab4f8 !important; }}
+            .text-success {{ color: #81c995 !important; }}
         }}
     </style>
 </head>
@@ -668,82 +677,82 @@ def send_welcome_email():
         </div>
         
         <!-- Content -->
-        <div class="content-section" style="padding: 40px 30px; color: #202124;">
+        <div class="content-section" style="padding: 40px 30px;">
             <!-- Getting Started -->
             <div style="margin-bottom: 40px;">
-                <h2 style="color: #1a73e8; font-size: 24px; margin: 0 0 20px 0; display: flex; align-items: center;">
+                <h2 class="text-accent" style="font-size: 24px; margin: 0 0 20px 0; display: flex; align-items: center;">
                     <span style="background: #e8f0fe; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 20px;">🚀</span>
                     Quick Start Guide
                 </h2>
-                <div class="feature-box" style="background: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 4px solid #1a73e8; color: #202124;">
+                <div class="feature-box" style="background: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 4px solid #1a73e8;">
                     <div style="display: flex; align-items: center; margin-bottom: 15px;">
                         <span style="background: #1a73e8; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">1</span>
-                        <span><strong>Compose:</strong> Click the blue compose button to send your first email</span>
+                        <span class="text-primary"><strong>Compose:</strong> Click the blue compose button to send your first email</span>
                     </div>
                     <div style="display: flex; align-items: center; margin-bottom: 15px;">
                         <span style="background: #1a73e8; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">2</span>
-                        <span><strong>Organize:</strong> Use folders in the sidebar to keep emails organized</span>
+                        <span class="text-primary"><strong>Organize:</strong> Use folders in the sidebar to keep emails organized</span>
                     </div>
                     <div style="display: flex; align-items: center; margin-bottom: 15px;">
                         <span style="background: #1a73e8; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">3</span>
-                        <span><strong>Search:</strong> Find any email instantly with our powerful search</span>
+                        <span class="text-primary"><strong>Search:</strong> Find any email instantly with our powerful search</span>
                     </div>
                     <div style="display: flex; align-items: center;">
                         <span style="background: #1a73e8; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px;">4</span>
-                        <span><strong>Account:</strong> Manage settings at <a href="https://account.roxli.in" style="color: #1a73e8; text-decoration: none;">Account Dashboard</a></span>
+                        <span class="text-primary"><strong>Account:</strong> Manage settings at <a href="https://account.roxli.in" class="text-accent" style="text-decoration: none;">Account Dashboard</a></span>
                     </div>
                 </div>
             </div>
             
             <!-- Security Features -->
             <div style="margin-bottom: 40px;">
-                <h2 style="color: #34a853; font-size: 24px; margin: 0 0 20px 0; display: flex; align-items: center;">
+                <h2 class="text-success" style="font-size: 24px; margin: 0 0 20px 0; display: flex; align-items: center;">
                     <span style="background: #e8f5e8; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 20px;">🔒</span>
                     Security & Privacy
                 </h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; text-align: center;">
                         <div style="font-size: 24px; margin-bottom: 8px;">🔐</div>
-                        <div style="font-weight: 600; color: #34a853;">Encrypted</div>
-                        <div style="font-size: 12px; color: #5f6368;">End-to-end encryption</div>
+                        <div class="text-success" style="font-weight: 600;">Encrypted</div>
+                        <div class="text-secondary" style="font-size: 12px;">End-to-end encryption</div>
                     </div>
                     <div style="background: #e8f0fe; padding: 15px; border-radius: 8px; text-align: center;">
                         <div style="font-size: 24px; margin-bottom: 8px;">👥</div>
-                        <div style="font-weight: 600; color: #1a73e8;">Multi-Account</div>
-                        <div style="font-size: 12px; color: #5f6368;">Easy account switching</div>
+                        <div class="text-accent" style="font-weight: 600;">Multi-Account</div>
+                        <div class="text-secondary" style="font-size: 12px;">Easy account switching</div>
                     </div>
                     <div style="background: #fef7e0; padding: 15px; border-radius: 8px; text-align: center;">
                         <div style="font-size: 24px; margin-bottom: 8px;">📱</div>
                         <div style="font-weight: 600; color: #f9ab00;">Device Control</div>
-                        <div style="font-size: 12px; color: #5f6368;">Manage all devices</div>
+                        <div class="text-secondary" style="font-size: 12px;">Manage all devices</div>
                     </div>
                     <div style="background: #fce8e6; padding: 15px; border-radius: 8px; text-align: center;">
                         <div style="font-size: 24px; margin-bottom: 8px;">🔑</div>
                         <div style="font-weight: 600; color: #ea4335;">2FA Ready</div>
-                        <div style="font-size: 12px; color: #5f6368;">Two-factor auth</div>
+                        <div class="text-secondary" style="font-size: 12px;">Two-factor auth</div>
                     </div>
                 </div>
             </div>
             
             <!-- Call to Action -->
             <div class="cta-section" style="text-align: center; background: linear-gradient(135deg, #e8f0fe 0%, #f3e8ff 100%); padding: 30px; border-radius: 12px; margin-bottom: 30px;">
-                <h3 style="color: #1a73e8; margin: 0 0 15px 0;">Ready to get started?</h3>
+                <h3 class="text-accent" style="margin: 0 0 15px 0;">Ready to get started?</h3>
                 <a href="https://mail.roxli.in" style="display: inline-block; background: #1a73e8; color: white; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; margin: 0 10px 10px 0;">Open Roxli Mail</a>
                 <a href="https://account.roxli.in" style="display: inline-block; background: transparent; color: #1a73e8; padding: 12px 30px; border: 2px solid #1a73e8; border-radius: 25px; text-decoration: none; font-weight: 600; margin: 0 10px 10px 0;">Account Settings</a>
             </div>
             
             <!-- Support -->
             <div class="feature-box" style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0; color: #202124;">
-                <p style="margin: 0 0 10px 0; color: #5f6368;">Need help? We're here for you!</p>
-                <p style="margin: 0; font-size: 14px;">Reply to this email or visit our <a href="#" style="color: #1a73e8;">Help Center</a></p>
+                <p class="text-secondary" style="margin: 0 0 10px 0;">Need help? We're here for you!</p>
+                <p class="text-primary" style="margin: 0; font-size: 14px;">Reply to this email or visit our <a href="#" class="text-accent" style="text-decoration: none;">Help Center</a></p>
             </div>
         </div>
         
         <!-- Footer -->
         <div class="footer" style="background: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0; color: #202124;">
-            <p style="margin: 0 0 10px 0; color: #1a73e8; font-weight: 600; font-size: 16px;">The Roxli Mail Team</p>
-            <p style="margin: 0 0 15px 0; color: #5f6368; font-size: 14px;">Making email secure, simple, and beautiful</p>
-            <div style="font-size: 12px; color: #9aa0a6; line-height: 1.5;">
+            <p class="text-accent" style="margin: 0 0 10px 0; font-weight: 600; font-size: 16px;">The Roxli Mail Team</p>
+            <p class="text-secondary" style="margin: 0 0 15px 0; font-size: 14px;">Making email secure, simple, and beautiful</p>
+            <div class="text-secondary" style="font-size: 12px; line-height: 1.5;">
                 <p style="margin: 0;">This email was sent to {user['email']}</p>
                 <p style="margin: 5px 0 0 0;">You received this because you created a Roxli Mail account</p>
             </div>

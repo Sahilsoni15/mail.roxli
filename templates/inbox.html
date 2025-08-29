@@ -957,9 +957,13 @@ function logout() {
 let emails = [];
 
 function loadEmails() {
-    // Clean emails first, then load
+    // Force cleanup emails first, then load
     fetch('/api/cleanup-emails', { method: 'POST' })
-        .then(() => {
+        .then(response => response.json())
+        .then(cleanupData => {
+            if (cleanupData.cleaned > 0) {
+                console.log(`Cleaned ${cleanupData.cleaned} emails`);
+            }
             return fetch('/api/emails');
         })
         .catch(() => {

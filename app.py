@@ -966,24 +966,22 @@ def cleanup_emails():
         
         cleaned_count = 0
         for email_id, email_data in user_emails.items():
-            original_subject = email_data.get('subject', '')
-            original_preview = email_data.get('preview', '')
-            original_body = email_data.get('body', '')
+            needs_update = False
+            update_data = {}
             
-            clean_subject = clean_merge_conflicts(original_subject)
-            clean_preview = clean_merge_conflicts(original_preview)
-            clean_body = clean_merge_conflicts(original_body)
+            # Clean all text fields
+            for field in ['subject', 'preview', 'body', 'message']:
+                original = email_data.get(field, '')
+                if original and ('<<<<<<< HEAD' in original or '=======' in original or '>>>>>>> ' in original):
+                    cleaned = clean_merge_conflicts(original)
+                    if cleaned != original:
+                        update_data[field] = cleaned
+                        needs_update = True
             
-            if (clean_subject != original_subject or 
-                clean_preview != original_preview or 
-                clean_body != original_body):
-                
-                mail_db.child(user['id']).child('inbox').child(email_id).update({
-                    'subject': clean_subject,
-                    'preview': clean_preview,
-                    'body': clean_body
-                })
+            if needs_update:
+                mail_db.child(user['id']).child('inbox').child(email_id).update(update_data)
                 cleaned_count += 1
+                print(f"Cleaned email {email_id}: {list(update_data.keys())}")
         
         return jsonify({'success': True, 'cleaned': cleaned_count})
     except Exception as e:

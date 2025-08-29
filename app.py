@@ -96,19 +96,25 @@ def clean_merge_conflicts(text):
     if not text:
         return text
     
-    import re
-    # Remove everything from <<<<<<< HEAD to >>>>>>> hash
-    text = re.sub(r'<<<<<<< HEAD.*?>>>>>>> [a-f0-9]+', '', text, flags=re.DOTALL)
-    # Remove standalone markers
-    text = re.sub(r'<<<<<<< HEAD.*?=======', '', text, flags=re.DOTALL)
-    text = re.sub(r'=======.*?>>>>>>> [a-f0-9]+', '', text, flags=re.DOTALL)
-    text = re.sub(r'<<<<<<< HEAD', '', text)
-    text = re.sub(r'=======', '', text)
-    text = re.sub(r'>>>>>>> [a-f0-9]+', '', text)
-    # Clean up extra whitespace and newlines
-    text = re.sub(r'\s+', ' ', text)
-    text = re.sub(r'^\s+|\s+$', '', text)
-    return text.strip()
+    lines = text.split('\n')
+    cleaned_lines = []
+    skip_mode = False
+    
+    for line in lines:
+        line = line.strip()
+        if line.startswith('<<<<<<< HEAD'):
+            skip_mode = True
+            continue
+        elif line.startswith('======='):
+            skip_mode = False
+            continue
+        elif line.startswith('>>>>>>> '):
+            continue
+        elif not skip_mode:
+            cleaned_lines.append(line)
+    
+    result = ' '.join(cleaned_lines).strip()
+    return result if result else text
 
 def get_current_user():
     """Get current user from token with session validation"""

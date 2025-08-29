@@ -520,14 +520,25 @@ def get_email(email_id):
         
         # Try to get from inbox first
         email_data = mail_db.child(user['id']).child('inbox').child(email_id).get()
+        email_folder = 'inbox'
         
         # If not found in inbox, try sent folder
         if not email_data:
             email_data = mail_db.child(user['id']).child('sent').child(email_id).get()
+            email_folder = 'sent'
         
         # Security check: ensure email belongs to current user
-        if email_data and (email_data.get('to') != user['email'] and email_data.get('from') != user['email']):
-            return jsonify({'error': 'Access denied'}), 403
+        if email_data:
+            user_owns_email = False
+            if email_folder == 'inbox' and email_data.get('to') == user['email']:
+                user_owns_email = True
+            elif email_folder == 'sent' and email_data.get('from') == user['email']:
+                user_owns_email = True
+            elif email_data.get('to') == user['email'] or email_data.get('from') == user['email']:
+                user_owns_email = True
+                
+            if not user_owns_email:
+                return jsonify({'error': 'Access denied'}), 403
         
         if email_data:
             # Create a mock email if this is the welcome email
@@ -570,22 +581,29 @@ def get_email(email_id):
                 }
             else:
                 sender_name = email_data.get('senderName', email_data.get('from', '').split('@')[0])
+                # Clean merge conflicts from email content
+                clean_subject = clean_merge_conflicts(email_data.get('subject', ''))
+                clean_body = clean_merge_conflicts(email_data.get('body', email_data.get('message', '')))
+                clean_message = clean_merge_conflicts(email_data.get('message', email_data.get('body', '')))
+                
                 email = {
                     'id': email_id,
                     'from': email_data.get('from', ''),
+                    'to': email_data.get('to', ''),
                     'senderName': sender_name,
                     'senderAvatar': email_data.get('senderAvatar', f'https://ui-avatars.com/api/?name={sender_name.replace(" ", "+")}&background=random&size=40'),
-                    'subject': email_data.get('subject', ''),
-                    'body': email_data.get('body', email_data.get('message', '')),
-                    'message': email_data.get('message', email_data.get('body', '')),
+                    'subject': clean_subject,
+                    'body': clean_body,
+                    'message': clean_message,
                     'time': email_data.get('time', ''),
                     'date': email_data.get('date', ''),
                     'read': email_data.get('read', False),
-                    'starred': email_data.get('starred', False)
+                    'starred': email_data.get('starred', False),
+                    'folder': email_folder
                 }
             
-            # Mark as read if not already
-            if not email_data or not email_data.get('read', False):
+            # Mark as read if not already (only for inbox emails)
+            if email_folder == 'inbox' and not email_data.get('read', False):
                 try:
                     mail_db.child(user['id']).child('inbox').child(email_id).update({'read': True})
                 except:

@@ -322,12 +322,8 @@ def send_email():
         # Save to sender's sent folder
         mail_db.child(user['id']).child('sent').child(email_id).set(email_data)
         
-        # Find recipient and add to their inbox - need to check auth database
-        # For now, assume recipient exists and use email as identifier
-        # TODO: Implement proper user lookup via auth service API
+        # Find recipient by calling auth service
         recipient_id = None
-        
-        # Try to find existing user in mail database first
         try:
             import requests
             # Call auth service to find user by email
@@ -340,9 +336,10 @@ def send_email():
                     recipient_id = auth_data['user']['id']
         except Exception as e:
             print(f"Error finding recipient: {e}")
-            # Fallback: create a simple hash-based ID for external emails
-            import hashlib
-            recipient_id = hashlib.md5(to.encode()).hexdigest()[:16]
+        
+        # If recipient not found in auth system, still save to sent folder
+        if not recipient_id:
+            print(f"Recipient {to} not found in system, email saved to sent folder only")
         
 
         
@@ -825,5 +822,5 @@ def send_notification_to_user(user_id, title, body, data=None):
         return False
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5004))
     app.run(debug=False, host='0.0.0.0', port=port)

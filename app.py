@@ -1134,6 +1134,27 @@ def get_available_accounts():
         print(f"Error fetching available accounts: {e}")
         return jsonify({'accounts': []})
 
+@app.route('/api/sync-avatar', methods=['POST'])
+def sync_avatar():
+    """Endpoint for syncing avatar updates across services"""
+    data = request.json
+    user_id = data.get('user_id')
+    avatar_url = data.get('avatar')
+    email = data.get('email')
+    
+    if not user_id or not avatar_url:
+        return jsonify({'error': 'User ID and avatar URL required'}), 400
+    
+    try:
+        # Update avatar in mail service - this would update email sender avatars
+        # For now, we'll just acknowledge the sync since mail service uses dynamic avatars
+        print(f"Avatar sync received for user {user_id}: {avatar_url}")
+        
+        return jsonify({'success': True, 'message': 'Avatar synced successfully'})
+    except Exception as e:
+        print(f"Error syncing avatar in mail service: {e}")
+        return jsonify({'error': 'Failed to sync avatar'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5004))
     app.run(debug=False, host='0.0.0.0', port=port)

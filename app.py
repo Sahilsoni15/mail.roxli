@@ -294,11 +294,35 @@ def get_emails():
                 clean_subject = clean_merge_conflicts(email_data.get('subject', ''))
                 clean_preview = clean_merge_conflicts(email_data.get('preview', ''))
                 
+                # Use stored avatar or fallback to stored senderAvatar or generate new one
+                sender_avatar = email_data.get('senderAvatar')
+                if not sender_avatar or 'ui-avatars.com' in sender_avatar:
+                    # Try to get updated avatar from user profiles
+                    try:
+                        # Find sender user ID by email (this is a simplified approach)
+                        sender_email = email_data.get('from', '')
+                        if sender_email:
+                            # Try to get avatar from auth service
+                            import requests
+                            auth_response = requests.post('https://auth.roxli.in/api/find-user', 
+                                                        json={'email': sender_email}, 
+                                                        timeout=2)
+                            if auth_response.status_code == 200:
+                                auth_data = auth_response.json()
+                                if auth_data.get('found') and auth_data['user'].get('avatar'):
+                                    sender_avatar = auth_data['user']['avatar']
+                    except Exception as e:
+                        print(f"Error fetching sender avatar: {e}")
+                    
+                    # Fallback to ui-avatars if still no avatar
+                    if not sender_avatar:
+                        sender_avatar = f'https://ui-avatars.com/api/?name={sender_name.replace(" ", "+")}&background=667eea&color=fff&size=40'
+                
                 emails.append({
                     'id': email_id,
                     'from': email_data.get('from', ''),
                     'senderName': sender_name,
-                    'senderAvatar': f'https://ui-avatars.com/api/?name={sender_name.replace(" ", "+")}&background=667eea&color=fff&size=40',
+                    'senderAvatar': sender_avatar,
                     'subject': clean_subject,
                     'preview': clean_preview,
                     'time': email_data.get('time', ''),
@@ -385,6 +409,9 @@ def send_email():
         safe_body = html.escape(body)
         
         sender_name = f"{user['firstName']} {user['lastName']}"
+        # Get user's current avatar (synced from account service)
+        sender_avatar = get_user_avatar(user['id'], user['email'], sender_name)
+        
         # Handle attachments
         attachment_data = []
         if attachments:
@@ -403,7 +430,7 @@ def send_email():
             'id': email_id,
             'from': user['email'],
             'senderName': sender_name,
-            'senderAvatar': f'https://ui-avatars.com/api/?name={sender_name.replace(" ", "+")}&background=random&size=40',
+            'senderAvatar': sender_avatar,
             'to': to,
             'subject': safe_subject,
             'body': safe_body,
@@ -1146,14 +1173,59 @@ def sync_avatar():
         return jsonify({'error': 'User ID and avatar URL required'}), 400
     
     try:
-        # Update avatar in mail service - this would update email sender avatars
-        # For now, we'll just acknowledge the sync since mail service uses dynamic avatars
-        print(f"Avatar sync received for user {user_id}: {avatar_url}")
+        if not mail_app:
+            return jsonify({'error': 'Mail service not available'}), 503
+            
+        mail_db = db.reference('emails', app=mail_app)
         
+        # Store user avatar in mail service for future use
+        user_data = {
+            'avatar': avatar_url,
+            'email': email,
+            'updated_at': datetime.now().timestamp()
+        }
+        mail_db.child('user_profiles').child(user_id).update(user_data)
+        
+        # Update existing emails from this user with new avatar
+        try:
+            # Update sent emails
+            sent_emails = mail_db.child(user_id).child('sent').get() or {}
+            for email_id, email_data in sent_emails.items():
+                if email_data.get('from') == email:
+                    mail_db.child(user_id).child('sent').child(email_id).update({'senderAvatar': avatar_url})
+            
+            # Update inbox emails where this user is the sender (in other users' inboxes)
+            # This is more complex and would require scanning all users, so we'll skip for now
+            # In a real implementation, you'd use a more efficient approach
+            
+        except Exception as e:
+            print(f"Error updating existing emails with new avatar: {e}")
+        
+        print(f"Avatar synced successfully for user {user_id}: {avatar_url}")
         return jsonify({'success': True, 'message': 'Avatar synced successfully'})
+        
     except Exception as e:
         print(f"Error syncing avatar in mail service: {e}")
         return jsonify({'error': 'Failed to sync avatar'}), 500
+
+def get_user_avatar(user_id, email, default_name=''):
+    """Get user avatar from local storage or generate default"""
+    try:
+        if not mail_app:
+            return f'https://ui-avatars.com/api/?name={default_name.replace(" ", "+")}&background=667eea&color=fff&size=40'
+            
+        mail_db = db.reference('emails', app=mail_app)
+        user_profile = mail_db.child('user_profiles').child(user_id).get()
+        
+        if user_profile and user_profile.get('avatar'):
+            return user_profile['avatar']
+        else:
+            # Fallback to ui-avatars
+            return f'https://ui-avatars.com/api/?name={default_name.replace(" ", "+")}&background=667eea&color=fff&size=40'
+            
+    except Exception as e:
+        print(f"Error getting user avatar: {e}")
+        return f'https://ui-avatars.com/api/?name={default_name.replace(" ", "+")}&background=667eea&color=fff&size=40'
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5004))
